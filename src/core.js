@@ -72,7 +72,7 @@
 			@type object
 		*/
 		_config: {
-			renderers: [HTMLMediaRenderer, FlashMediaRenderer, SilverlightMediaRenderer]
+			renderers: [HTMLMediaRenderer, FlashMediaRenderer]
 		},
 
 		/**
@@ -85,7 +85,7 @@
 			The current renderer
 			@type Renderer
 		*/
-		renderer: null,
+		_renderer: null,
 
 
 		/**
