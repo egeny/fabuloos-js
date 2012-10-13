@@ -1,24 +1,25 @@
 /**
-	@author <a href="mailto:nico@egeny.net">Nicolas Le Gall</a>
-	@version @VERSION
-*/
+ * @author <a href="mailto:nico@egeny.net">Nicolas Le Gall</a>
+ * @version @VERSION
+ */
 
 // Core module
-(function( win ) {
+(function( scope ) {
 
 	// Use JavaScript script mode
 	"use strict";
 
-	/*jshint curly: true, noempty: true, strict: true, boss: true, evil: false, smarttabs: true, sub: false */
-	/*global browser, rhino */
 	/*global HTMLMediaRenderer, FlashMediaRenderer, SilverlightMediaRenderer */
 
 	var
 		/**
-			Create a simple function returning an instance of itself
-			@name fabuloos
-			@namespace
-		*/
+		 * A simple function handling the instances cache (create a new if needed)
+		 *
+		 * @param {string} id The ID attribute of the source &lt;video&gt; or &lt;audio&gt; to enhance
+		 * @param {object} [config={}] The player configuration
+		 *
+		 * @returns {fabuloos} Return a player instance or false if the element doesn't exists
+		 */
 		fabuloos = function( id, config ) {
 			if (!fabuloos.instances[id]) {
 				fabuloos.instances[id] = new fabuloos.prototype.init( id, config );
@@ -29,10 +30,10 @@
 
 
 	/**
-		An expando to be used in the DOM
-		@static
-		@type string
-	*/
+	 * An expando to be used in the DOM
+	 * @static
+	 * @type string
+	 */
 	fabuloos.expando = "fabuloos" + (+new Date());
 
 
@@ -41,66 +42,63 @@
 
 
 	/**
-		A cache for all fabuloos' instances
-		@static
-		@type object
-	*/
+	 * A cache for all fabuloos' instances
+	 * @static
+	 * @type object
+	 */
 	fabuloos.instances = {};
 
 
 	/**
-		The current script's version
-		@static
-		@type string
-	*/
+	 * The current script's version
+	 * @static
+	 * @type string
+	 */
 	fabuloos.version = "@VERSION";
 
 
-	/**
-		@lends fabuloos.prototype
-	*/
 	fabuloos.prototype = {
 
 		/**
-			The ID attribute of the enhanced element
-			@type string
-		*/
+		 * The ID attribute of the enhanced element
+		 * @type string
+		 */
 		id: null,
 
 		/**
-			The whole instance configuration
-			@type object
-		*/
+		 * The whole instance configuration
+		 * @type object
+		 */
 		_config: {
 			renderers: [HTMLMediaRenderer, FlashMediaRenderer]
 		},
 
 		/**
-			The enhanced element
-			@type Node
-		*/
+		 * The enhanced element
+		 * @type Node
+		 */
 		element: null,
 
 		/**
-			The current renderer
-			@type Renderer
-		*/
+		 * The current renderer
+		 * @type Renderer
+		 */
 		_renderer: null,
 
 
 		/**
-			Create a new player instance using an existing &lt;video&gt; or &lt;audio&gt; tag. Allow to set a different configuration.
-			@contructs
-
-			@param {string} id The ID attribute of the source &lt;video&gt; or &lt;audio&gt; to enhance
-			@param {object} [config={}] The player configuration
-
-			@returns {fabuloos} Return a new player instance or false if the element doesn't exists
-
-			@example
-				var player = fabuloos("player");
-				var player = fabuloos("player", { width: 720 });
-		*/
+		 * Create a new player instance using an existing &lt;video&gt; or &lt;audio&gt; tag. Allow to set a different configuration.
+		 * @contructs
+		 *
+		 * @param {string} id The ID attribute of the source &lt;video&gt; or &lt;audio&gt; to enhance
+		 * @param {object} [config={}] The player configuration
+		 *
+		 * @returns {fabuloos} Return a new player instance or false if the element doesn't exists
+		 *
+		 * @example
+		 *  var player = fabuloos( "player" );
+		 *  var player = fabuloos( "player", { width: 720 } );
+		 */
 		init: function( id, config ) {
 			// Don't execute while extending
 			if (fabuloos.extending) {
@@ -151,26 +149,26 @@
 
 
 	/**
-		Extend fabuloos with a given object literal. Simulating inheritance by giving access to _super.
-		@static @function
-		@see <a href="http://ejohn.org/blog/simple-javascript-inheritance/">John Resig - Simple JavaScript Inheritance</a>
-
-		@param {object} obj The object literal containing the properties and methods to add to ftvPlayer
-
-		@example
-			<code>
-			fabuloos.extend({
-				play: function() {}
-			});
-			</code>
-	*/
+	 * Extend fabuloos with a given object literal. Simulating inheritance by giving access to _super.
+	 * @static @function
+	 * @see <a href="http://ejohn.org/blog/simple-javascript-inheritance/">John Resig - Simple JavaScript Inheritance</a>
+	 *
+	 * @param {object} obj The object literal containing the properties and methods to add to ftvPlayer
+	 *
+	 * @example
+	 *  <code>
+	 *  fabuloos.extend({
+	 *    play: function() {}
+	 *  });
+	 *  </code>
+	 */
 	fabuloos.extend = function( obj ) {
 		// We are extending the main class, prevent code execution on init when copying the prototype
 		fabuloos.extending = true;
 
 		var
 			// Set a RegExp to test for _super calls in methods
-			fnTest = /xyz/.test(function() { "xyz"; }) ? /\b_super\b/ : /.*/,
+			fnTest = /xyz/.test( function() { "xyz"; } ) ? /\b_super\b/ : /.*/,
 
 			// Copy the current prototype to use it in _super magical methods
 			_super = this.prototype,
@@ -204,8 +202,8 @@
 		// Loop through each property to extend
 		for (prop in obj) {
 			// Override the property if the new property value is a function and already exists
-			prototype[prop] = (typeof obj[prop] === "function" && typeof _super[prop] === "function" && fnTest.test(obj[prop])) ?
-				createExtended(prop, obj[prop], _super) :
+			prototype[prop] = (typeof obj[prop] === "function" && typeof _super[prop] === "function" && fnTest.test( obj[prop] )) ?
+				createExtended( prop, obj[prop], _super ) :
 				obj[prop]; // Otherwise, simply add the property/method
 		}
 
@@ -221,6 +219,6 @@
 
 
 	// Expose
-	win.fab = win.fabuloos = fabuloos;
+	scope.fab = scope.fabuloos = fabuloos;
 
-}(window)); // end of Core module
+}( window )); // end of Core module
