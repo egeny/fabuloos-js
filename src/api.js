@@ -4,207 +4,201 @@
 	// Use JavaScript script mode
 	"use strict";
 
-	/*jshint curly: true, newcap: false, noempty: true, strict: true, boss: true, evil: false, smarttabs: true, sub: false */
-	/*global browser, rhino */
-	/*global HTMLMediaRenderer, FlashMediaRenderer, SilverlightMediaRenderer */
+	/*jshint newcap: false */
+	/*global HTMLMediaRenderer */
 
 	var
 		/**
-			The properties we can get
-			@type {string}
-		*/
+		 * The properties we can get
+		 * @type {string}
+		 */
 		getterProperties = "error networkState readyState width height videoWidth videoHeight src currentSrc preload buffered startOffsetTime initialTime currentTime duration defaultPlaybackRate playbackRate seeking seekable paused played ended poster autoplay controls loop volume muted",
 
 		/**
-			The properties we can set
-			@type {string}
-		*/
+		 * The properties we can set
+		 * @type {string}
+		 */
 		setterProperties = "width height src preload currentTime defaultPlaybackRate playbackRate poster autoplay controls loop volume muted",
 
 		/**
-			The properties we can toggle
-			@type {string}
-		*/
+		 * The properties we can toggle
+		 * @type {string}
+		 */
 		togglerProperties = "autoplay controls loop muted";
 
 
-	player.extend(
+	player.extend({
+
 		/**
-			@lends fabuloos.prototype
-		*/
-		{
+		 * Attach all listeners to the player
+		 * @function
+		 *
+		 * @returns {fabuloos} Return the current instance of the player to allow chaining
+		 */
+		attach: function() {
+			// Use the static attach function
+			player.event.attach( this );
 
-			/**
-				Attach all listeners to the player
-				@function
-
-				@returns {fabuloos} Return the current instance of the player to allow chaining
-			*/
-			attach: function() {
-				// Use the static attach function
-				player.event.attach( this );
-
-				return this; // Chaining
-			}, // end of attach()
+			return this; // Chaining
+		}, // end of attach()
 
 
-			/**
-				Get or set the configuration
-				@function
+		/**
+		 * Get or set the configuration
+		 * @function
+		 *
+		 * @param {object} [config=undefined] The configuration to apply. If none will behave as a getter.
+		 *
+		 * @returns {fabuloos} Return the current instance of the player to allow chaining
+		 */
+		config: function( config ) {
+			// No argument, acting like a getter
+			if (!config) {
+				return this._config;
+			}
 
-				@param {object} [config=undefined] The configuration to apply. If none will behave as a getter.
+			var
+				// Loop specific
+				property,
 
-				@returns {fabuloos} Return the current instance of the player to allow chaining
-			*/
-			config: function( config ) {
-				// No argument, acting like a getter
-				if (!config) {
-					return this._config;
+				// The "src" property has to be delayed
+				delayed = false;
+
+			// Loop through the received config
+			for (property in config) {
+				if (property === "src") {
+					delayed = true;
+					continue;
 				}
 
-				var
-					// Loop specific
-					property,
+				this.set( property, config[property] );
+			} // end of for
 
-					// The "src" property has to be delayed
-					delayed = false;
+			// After setting the config, we ask for a new source (and/or a new renderer)
+			if (delayed) {
+				this.set( "src", config.src );
+			}
 
-				// Loop through the received config
-				for (property in config) {
-					if (property === "src") {
-						delayed = true;
-						continue;
-					}
-
-					this.set( property, config[property] );
-				} // end of for
-
-				// After setting the config, we ask for a new source (and/or a new renderer)
-				if (delayed) {
-					this.set( "src", config.src );
-				}
-
-				return this; // Chaining
-			}, // end of config()
+			return this; // Chaining
+		}, // end of config()
 
 
-			/**
-				Detach all listeners from the player
-				@function
+		/**
+		 * Detach all listeners from the player
+		 * @function
+		 *
+		 * @returns {fabuloos} Return the current instance of the player to allow chaining
+		 */
+		detach: function() {
+			// Use the static detach function
+			player.event.detach( this );
 
-				@returns {fabuloos} Return the current instance of the player to allow chaining
-			*/
-			detach: function() {
-				// Use the static detach function
-				player.event.detach( this );
-
-				return this; // Chaining
-			}, // end of detach()
-
-
-			/**
-				Get a player's property. Warning: breaks the chaining.
-				@function
-
-				@param {string} property The property's value to return
-
-				@returns Return the property's value
-
-				@example
-					<code>
-						var player = fabuloos("video");
-						player.get("paused"); // true or false
-					</code>
-			*/
-			get: function( property ) {
-				return (new RegExp( property ).test( getterProperties ) && this._renderer) ? this._renderer.get( property ) : this._config[property];
-			}, // end of get()
+			return this; // Chaining
+		}, // end of detach()
 
 
-			/**
-				Load the source.
-				@function
-
-				@returns {fabuloos} Return the current instance of the player to allow chaining
-
-				@example
-					<code>
-						var player = fabuloos("video");
-						player
-							.set("src", "http://localhost/file.mp4")
-							.set("autoplay", true)
-							.load();
-					</code>
-			*/
-			load: function() {
-				if (this._renderer) {
-					this._renderer.load();
-				}
-
-				return this; // Chaining
-			}, // end of load()
+		/**
+		 * Get a player's property. Warning: breaks the chaining.
+		 * @function
+		 *
+		 * @param {string} property The property's value to return
+		 *
+		 * @returns Return the property's value
+		 *
+		 * @example
+		 *  <code>
+		 *    var player = fabuloos( "media" );
+		 *    player.get( "paused" ); // true or false
+		 *  </code>
+		 */
+		get: function( property ) {
+			return (new RegExp( property ).test( getterProperties ) && this._renderer) ? this._renderer.get( property ) : this._config[property];
+		}, // end of get()
 
 
-			/**
-				Pause the playback.
-				@function
+		/**
+		 * Load the source.
+		 * @function
+		 *
+		 * @returns {fabuloos} Return the current instance of the player to allow chaining
+		 *
+		 * @example
+		 *  <code>
+		 *    var player = fabuloos( "media" );
+		 *    player
+		 *      .set( "src", "http://localhost/file.mp4" )
+		 *      .set( "autoplay", true )
+		 *      .load();
+		 *  </code>
+		 */
+		load: function() {
+			if (this._renderer) {
+				this._renderer.load();
+			}
 
-				@returns {fabuloos} Return the current instance of the player to allow chaining
-
-				@example
-					<code>
-						var player = ftvPlayer("video");
-						player.pause(); // Pause the playback
-					</code>
-			*/
-			pause: function() {
-				if (this._renderer) {
-					this._renderer.pause();
-				}
-
-				return this; // Chaining
-			}, // end of pause()
+			return this; // Chaining
+		}, // end of load()
 
 
+		/**
+		 * Pause the playback.
+		 * @function
+		 *
+		 * @returns {fabuloos} Return the current instance of the player to allow chaining
+		 *
+		 * @example
+		 *  <code>
+		 *    var player = fabuloos( "media" );
+		 *    player.pause(); // Pause the playback
+		 *  </code>
+		 */
+		pause: function() {
+			if (this._renderer) {
+				this._renderer.pause();
+			}
 
-			/**
-				Launch the playback on the player.
-				A source or object can be directly given as parameter.
-				@function
+			return this; // Chaining
+		}, // end of pause()
 
-				@param {string|object} [source=undefined] The source to play. The MIME type will be guessed if not provided.
 
-					@param {string} source The source to play
+		/**
+		 * Launch the playback on the player.
+		 * A source or object can be directly given as parameter.
+		 * @function
+		 *
+		 * @param {string|object} [source=undefined] The source to play. The MIME type will be guessed if not provided.
+		 *
+		 * @param {string} [source=undefined] The source to play
+		 *
+		 * @param {string} source.src The source to play
+		 * @param {string} [source.type=undefined] The source's MIME type
+		 *
+		 * @returns {fabuloos} Return the current instance of the player to allow chaining
 
-					@param {string} source.src The source to play
-					@param {string} [source.type=undefined] The source's MIME type
+		 * @example
+		 *  <code>
+		 *    var player = fabuloos( "video" );
+		 *    player.play(); // Launch the playback
+		 *    player.play( "http://example.org/file.mp4" ); // Launch a specific source
 
-				@returns {fabuloos} Return the current instance of the player to allow chaining
+		 *    // Launch a specific source by providing MIME type
+		 *    player.play({
+		 *      src:  "http://example.org/file.mp4",
+		 *      type: "video/mp4"
+		 *    });
+		 *  </code>
+		 */
+		play: function( source ) {
+			if (source) {
+				this.src( source );
+			}
 
-				@example
-					<code>
-						var player = ftvPlayer("video");
-						player.play(); // Launch the playback
-						player.play( "http://localhost/file.mp4" ); // Launch a specific source
+			if (this._renderer) {
+				this._renderer.play();
+			}
 
-						// Launch a specific source by providing MIME type
-						player.play({
-							src: "http://localhost/file.mp4",
-							type: "video/mp4"
-						});
-					</code>
-			*/
-			play: function( source ) {
-				if (source) {
-					this.src( source );
-				}
-
-				if (this._renderer) {
-					this._renderer.play();
-				}
-
-				return this; // Chaining
-			}, // end of play()
+			return this; // Chaining
+		}, // end of play()
 
 
 			/**
@@ -342,10 +336,10 @@
 
 				@example
 					<code>
-						var player = ftvPlayer("video");
+						var player = fabuloos( "video" );
 						player.src(); // Get the current source
 
-						player.src("http://example.org/video.mp4"); // Set the source
+						player.src( "http://example.org/video.mp4" ); // Set the source
 
 						// Set the source using object
 						player.src({
@@ -411,7 +405,7 @@
 						// Don't try other renderer
 						break;
 					}
-				}
+				} // end of for
 
 				// No renderer found capable of playing this source
 				if (!canPlay) {
@@ -423,43 +417,42 @@
 			}, // end of src()
 
 
-			/**
-				Toggle a player's property's value
-				@function
+		/**
+		 * Toggle a player's property's value
+		 * @function
+		 *
+		 * @param {string} property The property to toggle
+		 *
+		 * @returns {fabuloos} Return the current instance of the player to allow chaining
+		 *
+		 * @example
+		 *  <code>
+		 *    var player = fabuloos( "video" );
+		 *    player.toggle( "autoplay" );
+		 *  </code>
+		*/
+		toggle: function( property ) {
+			if (new RegExp( property ).test( togglerProperties ) && this._renderer) {
+				// Set the property by toggleing its value
+				this._renderer.set( property, !this._renderer.get( property ) );
+			}
 
-				@param {string} property The property to toggle
-
-				@returns {fabuloos} Return the current instance of the player to allow chaining
-
-				@example
-					<code>
-						var player = ftvPlayer("video");
-						player.toggle("autoplay");
-					</code>
-			*/
-			toggle: function( property ) {
-				if (new RegExp( property ).test( togglerProperties ) && this._renderer) {
-					// Set the property by toggleing its value
-					this._renderer.set( property, !this._renderer.get( property ) );
-				}
-
-				return this; // Chaining
-			}, // end of toggle()
+			return this; // Chaining
+		}, // end of toggle()
 
 
-			/**
-				Trigger the listeners for a type. Warning: breaks the chaining.
-				@function
+		/**
+		 * Trigger the listeners for a type. Warning: breaks the chaining.
+		 * @function
+		 *
+		 * @param {string} type Event type
+		 *
+		 * @returns Return the last listener result or false
+		 */
+		trigger: function( type ) {
+			return player.event.trigger( this, type );
+		} // end of trigger()
 
-				@param {string} type Event type
+	}); // end of player.extend()
 
-				@returns Return the last listener result or false
-			*/
-			trigger: function( type ) {
-				return player.event.trigger( this, type );
-			} // end of trigger()
-
-		}
-	); // end of player.extend()
-
-}(fabuloos)); // end of API module
+}( fabuloos )); // end of API module

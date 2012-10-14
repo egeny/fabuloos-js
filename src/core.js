@@ -96,8 +96,8 @@
 		 * @returns {fabuloos} Return a new player instance or false if the element doesn't exists
 		 *
 		 * @example
-		 *  var player = fabuloos( "player" );
-		 *  var player = fabuloos( "player", { width: 720 } );
+		 *  var player = fabuloos( "media" );
+		 *  var player = fabuloos( "media", { width: 720 } );
 		 */
 		init: function( id, config ) {
 			// Don't execute while extending
@@ -153,7 +153,7 @@
 	 * @static @function
 	 * @see <a href="http://ejohn.org/blog/simple-javascript-inheritance/">John Resig - Simple JavaScript Inheritance</a>
 	 *
-	 * @param {object} obj The object literal containing the properties and methods to add to ftvPlayer
+	 * @param {object} obj The object literal containing the properties and methods to add to fabuloos
 	 *
 	 * @example
 	 *  <code>
