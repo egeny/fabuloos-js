@@ -9,7 +9,7 @@
 	// Use JavaScript script mode
 	"use strict";
 
-	/*global HTMLMediaRenderer, FlashMediaRenderer, SilverlightMediaRenderer */
+	/*global HTMLMediaRenderer, FlashMediaRenderer */
 
 	var
 		/**
