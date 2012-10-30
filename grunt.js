@@ -21,6 +21,9 @@ module.exports = function(grunt) {
 		concat: {
 			dist: {
 				src: [
+					'src/renderers/Renderer.js',
+					'src/renderers/HTMLMediaRenderer.js',
+					'src/renderers/FlashMediaRenderer.js',
 					'src/core.js',
 					'src/event.js',
 					'src/api.js',
