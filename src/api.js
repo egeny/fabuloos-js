@@ -201,220 +201,222 @@
 		}, // end of play()
 
 
-			/**
-				Change or get the renderer.
-				@function
+		/**
+		 * Change or get the renderer.
+		 * @function
+		 *
+		 * @param {Renderer} [renderer=undefined] The new renderer to create
+		 *
+		 * @returns {fabuloos} Return the current instance of the player to allow chaining
+		 */
+		renderer: function( renderer ) {
+			// No renderer received, acting like a getter
+			if (!renderer) {
+				return this._renderer;
+			}
 
-				@param {Renderer} [renderer=undefined] The new renderer to create
+			// Check if we correctly received a renderer
+			if (!renderer.canPlay) {
+				// TODO: Is it wise to throw an Exception?
+				throw (renderer.name || renderer) + " is not a valid renderer.";
+			}
 
-				@returns {fabuloos} Return the current instance of the player to allow chaining
-			*/
-			renderer: function( renderer ) {
-				// No renderer received, acting like a getter
-				if (!renderer) {
-					return this._renderer;
-				}
+			// Check if the renderer is supported before creating it
+			if (!renderer.isSupported) {
+				// TODO: dispatch a better event
+				return this.dispatch( "error" );
+			}
 
-				// Check if we correctly received a renderer
-				if (!renderer.canPlay) {
-					throw (renderer.name || renderer) + " is not a valid renderer.";
-				}
+			var
+				// Prepare the default config for the renderers
+				config = {
+					id:     this.id,
+					width:  this._config.width  || 0,
+					height: this._config.height || 0
+				};
 
-				// Check if the renderer is supported before creating it
-				if (!renderer.isSupported) {
-					// TODO
-					return this.dispatch( "error" );
-				}
+			// Detach all listeners
+			this.detach();
 
-				var
-					// Prepare the default config for the renderers
-					config = {
-						id: this.id,
-						width:  this._config.width  || 0,
-						height: this._config.height || 0
-					};
+			// Destroy the current renderer (clean the renderers instances cache)
+			if (this._renderer) {
+				this._renderer.destroy();
+			}
 
-				// Detach all listeners
-				this.detach();
+			// Create the new renderer. HTMLMediaRenderer need the element to determine which tag to create
+			// TODO: The new HTMLMediaRenderer should reflect the source MIME type
+			this._renderer = renderer === HTMLMediaRenderer ? new renderer( this.element, config ) : new renderer( config );
 
-				// Destroy the current renderer (clean the renderers instances cache)
-				if (this._renderer) {
-					this._renderer.destroy();
-				}
+			// Replace the old renderer markup
+			this._renderer.replace( this.element );
 
-				// Create the new renderer. HTMLMediaRenderer need the element to determine which tag to create
-				this._renderer = renderer === HTMLMediaRenderer ? new renderer(this.element, config) : new renderer(config);
+			// Apply the current config
+			for (var property in this._config) {
+				this.set( property, this._config[property] );
+			}
 
-				// Replace the old renderer markup
-				this._renderer.replace( this.element );
+			// Keep a reference of the element (just in case)
+			this.element = this._renderer.element;
 
-				// Apply the current config
-				for (var property in this._config) {
-					this.set( property, this._config[property] );
-				}
+			// Attach all listeners
+			this.attach();
 
-				// Keep a reference of the element (just in case)
-				this.element = this._renderer.element;
-
-				// Attach all listeners
-				this.attach();
-
-				return this; // Chaining
-			}, // end of renderer()
+			return this; // Chaining
+		}, // end of renderer()
 
 
-			/**
-				Set a player's property.
-				@function
+		/**
+		 * Set a player's property.
+		 * @function
+		 *
+		 * @param {string} property The property to set
+		 * @param {*} value The new property's value
+		 *
+		 * @returns {fabuloos} Return the current instance of the player to allow chaining
+		 *
+		 * @example
+		 * <code>
+		 *   var player = fabuloos( "video" );
+		 *   player.set( "autoplay", true );
+		 * </code>
+		 */
+		set: function( property, value ) {
+			var
+				// Loop specific
+				i = 0, count,
 
-				@param {string} property The property to set
-				@param value The new property's value
+				// A stack of supported renderers (when defining renderers)
+				renderers = [];
 
-				@returns {fabuloos} Return the current instance of the player to allow chaining
+			// Some properties have to be handled specifically
+			switch (property) {
+				case "renderers":
+					// Makes sure we receive an array
+					value = (value.push) ? value : [value];
 
-				@example
-					<code>
-						var player = fabuloos("video");
-						player.set("autoplay", true);
-					</code>
-			*/
-			set: function( property, value ) {
-				var
-					// Loop specific
-					i = 0, count,
-
-					// A stack of supported renderers (when defining renderers)
-					renderers = [];
-
-				// Some properties have to be handled specifically
-				switch (property) {
-					case "renderers":
-						// Makes sure we receive an array
-						value = (value.push) ? value : [value];
-
-						// Loop through each renderers to test them
-						for (i = 0, count = value.length; i < count; i++) {
-							if (value[i].isSupported) {
-								// This renderer is supported, add it to the stack
-								renderers.push( value[i] );
-							}
+					// Loop through each renderers to test them
+					for (i = 0, count = value.length; i < count; i++) {
+						if (value[i].isSupported) {
+							// This renderer is supported, add it to the stack
+							renderers.push( value[i] );
 						}
-
-						// Override the value with the supported renderers
-						value = renderers;
-					break;
-
-					case "src":
-						// Prefer the most specific function for "src" property
-						this.src( value );
-					break;
-				}
-
-				// If the API allow to set this property ask the renderer (if any) to set it
-				if (new RegExp( property ).test( setterProperties ) && this._renderer) {
-					// Ask the renderer to change the property's value
-					this._renderer.set( property, value );
-
-					// Retrieve the value corrected by the renderer
-					value = this._renderer.get( property );
-				}
-
-				// Store a copy of this value
-				this._config[property] = value;
-
-				return this; // Chaining
-			}, // end of set()
-
-
-			/**
-				Get the source or set a new source (may change the renderer).
-				@function
-
-				@param {string|object} [value=undefined] The new source's value. Can be string or object (see example).
-
-				@returns {string|fabuloos} Return the source if no param or the current instance of the player to allow chaining
-
-				@example
-					<code>
-						var player = fabuloos( "video" );
-						player.src(); // Get the current source
-
-						player.src( "http://example.org/video.mp4" ); // Set the source
-
-						// Set the source using object
-						player.src({
-							src: "http://example.org/video.mp4"
-						});
-
-						// Set the source using object and helping by providing the correct MIME type
-						player.src({
-							src: "http://example.org/video.mp4",
-							type: "video/mp4"
-						});
-					</code>
-			*/
-			src: function( value ) {
-				// Check if we have a new source
-				if (!value || (typeof value !== "string" && !value.src)) {
-					// Don't seems, it's a getter
-					return this.get( "src" );
-				}
-
-				var
-					// A neat version of value
-					source = {
-						src:  (typeof value === "string") ? value : value.src,
-						type: value.type
-					},
-
-					// Loop specific
-					i = 0, count = this._config.renderers.length, renderer,
-
-					// Used to store the canPlayUsing result and guess if we changed the renderer
-					canPlay,
-
-					// A small utility function
-					canPlayUsing = function( renderer ) {
-						return renderer[source.type ? "canPlayType" : "canPlay"](source.type || source.src);
-					};
-
-				// Try using the current renderer if any and can play
-				if (this._renderer && canPlayUsing( this._renderer.constructor )) {
-					this._renderer.set( "src", source.src ); // Simply change the source
-					return this; // Chaining
-				}
-
-				// Loop through each renderers
-				for (; i < count; i++) {
-					// Admit it, it's much easier to read like that
-					renderer = this._config.renderers[i];
-
-					// Skip the current renderer since it failed sooner
-					if (this._renderer && this._renderer.constructor === renderer) {
-						continue;
 					}
 
-					// Save the result to check if we didn't find a new renderer (and dispatch error event)
-					canPlay = canPlayUsing( renderer );
+					// Override the value with the supported renderers
+					value = renderers;
+				break;
 
-					// Test if the renderer can play the source
-					if (canPlay) {
-						// This renderer seems good, change for it
-						this.renderer( renderer );
+				case "src":
+					// Prefer the most specific function for "src" property
+					this.src( value );
+				break;
+			}
 
-						// Don't try other renderer
-						break;
-					}
-				} // end of for
+			// If the API allow to set this property ask the renderer (if any) to set it
+			if (new RegExp( property ).test( setterProperties ) && this._renderer) {
+				// Ask the renderer to change the property's value
+				this._renderer.set( property, value );
 
-				// No renderer found capable of playing this source
-				if (!canPlay) {
-					// TODO
-					this.dispatch( "error" );
+				// Retrieve the value corrected by the renderer
+				value = this._renderer.get( property );
+			}
+
+			// Store a copy of this value
+			this._config[property] = value;
+
+			return this; // Chaining
+		}, // end of set()
+
+
+		/**
+		 * Get the source or set a new source (may change the renderer).
+		 * @function
+		 *
+		 * @param {string|object} [value=undefined] The new source's value. Can be string or object (see example).
+		 *
+		 * @returns {string|fabuloos} Return the source if no param or the current instance of the player to allow chaining
+		 *
+		 * @example
+		 * <code>
+		 *   var player = fabuloos( "video" );
+		 *   player.src(); // Get the current source
+		 *
+		 *   player.src( "http://example.org/video.mp4" ); // Set the source
+		 *
+		 *   // Set the source using object
+		 *   player.src({
+		 *     src: "http://example.org/video.mp4"
+		 *   });
+		 *
+		 *   // Set the source using object and helping by providing the correct MIME type
+		 *   player.src({
+		 *     src: "http://example.org/video.mp4",
+		 *     type: "video/mp4"
+		 *   });
+		 * </code>
+		 */
+		src: function( value ) {
+			// Check if we have a new source
+			if (!value || (typeof value !== "string" && !value.src)) {
+				// Don't seems, it's a getter
+				return this.get( "src" );
+			}
+
+			var
+				// A neat version of value
+				source = {
+					src:  (typeof value === "string") ? value : value.src,
+					type: value.type
+				},
+
+				// Loop specific
+				i = 0, count = this._config.renderers.length, renderer,
+
+				// Used to store the canPlayUsing result and guess if we changed the renderer
+				canPlay,
+
+				// A small utility function
+				canPlayUsing = function( renderer ) {
+					return renderer[source.type ? "canPlayType" : "canPlay"](source.type || source.src);
+				};
+
+			// Try using the current renderer if any and can play
+			if (this._renderer && canPlayUsing( this._renderer.constructor )) {
+				this._renderer.set( "src", source.src ); // Simply change the source
+				return this; // Chaining
+			}
+
+			// Loop through each renderers
+			for (; i < count; i++) {
+				// Admit it, it's much easier to read like that
+				renderer = this._config.renderers[i];
+
+				// Skip the current renderer since it failed sooner
+				if (this._renderer && this._renderer.constructor === renderer) {
+					continue;
 				}
 
-				return this; // Chaining
-			}, // end of src()
+				// Save the result to check if we didn't find a new renderer (and dispatch error event)
+				canPlay = canPlayUsing( renderer );
+
+				// Test if the renderer can play the source
+				if (canPlay) {
+					// This renderer seems good, change for it
+					this.renderer( renderer );
+
+					// Don't try other renderer
+					break;
+				}
+			} // end of for
+
+			// No renderer found capable of playing this source
+			if (!canPlay) {
+				// TODO: Dispatch another kind of event
+				this.dispatch( "error" );
+			}
+
+			return this; // Chaining
+		}, // end of src()
 
 
 		/**
@@ -430,7 +432,7 @@
 		 *    var player = fabuloos( "video" );
 		 *    player.toggle( "autoplay" );
 		 *  </code>
-		*/
+		 */
 		toggle: function( property ) {
 			if (new RegExp( property ).test( togglerProperties ) && this._renderer) {
 				// Set the property by toggleing its value
