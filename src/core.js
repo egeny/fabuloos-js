@@ -113,6 +113,9 @@
 				property, value,
 				i = 0, count;
 
+			// Handle undefined config
+			config = config || {};
+
 			// Copy the received config in the local _config
 			for (property in config) {
 				_config[property] = config[property];
@@ -130,7 +133,7 @@
 				// Watch for defined attributes
 				for (count = this.element.attributes.length; i < count; i++) {
 					property = this.element.attributes[i].name;
-					value    = this.element[property];
+					value    = this.element.getAttribute( property ); // Use getAttribute to handle browser vendor specific attribute
 
 					// Don't override if the property already exists
 					if (!(property in config) && value) {
