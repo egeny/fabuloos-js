@@ -100,6 +100,12 @@
 		instance.id = config.id;
 		instance.config = config;
 
+		// Initialize a cache for event and property (very useful when plugin aren't ready)
+		instance.cache = {
+			events: {},
+			properties: {}
+		};
+
 		return instance;
 	}; // end of Renderer.init()
 
@@ -388,6 +394,30 @@
 
 
 		/**
+		 * Emulate the addEventListener method, used to allow plugin to listen events
+		 * @function
+		 *
+		 * @param {string} type The event type to listen
+		 * @param {function} handler The handler to call when this event type will be triggered
+		 */
+		bind: function( type, handler ) {
+			// Initialize the cache for this type
+			if (!this.cache.events[type]) {
+				this.cache.events[type] = [];
+			}
+
+			// If this renderer has an element and this element have a bind method (plugins)
+			if (this.element && this.element.bind) {
+				// Ask the element (plugin) to listen for this type of event
+				this.element.bind( type );
+			}
+
+			// Save the handler in the cache
+			this.cache.events[type].push( handler );
+		}, // end of bind()
+
+
+		/**
 		 * Destroy an instance (remove from cache)
 		 * @function
 		 */
@@ -401,100 +431,24 @@
 
 
 		/**
-		 * Dispatch an event on the element
+		 * Dispatch an event type
 		 * @function
 		 *
-		 * @param {object} source The source event
+		 * @param {string|object} event The event (object) or event type (string) to dispatch
 		 */
-		/*exposeEvent: function(source) {
-
-			// TODO
-
-			// Correct the source (dumb Silverlight)
-			if (typeof source === "string") {
-				try {
-					// Try to parse the JSON using native parsing or eval…
-					source = window.JSON ? JSON.parse(source) : (new Function("return " + source))();
-				} catch (e) {
-					// If it failed the source is an event.type
-					source = { type: source };
-				}
-			}
-
-			// Firefox handle natively the click on plugins
-			if (/firefox/i.test(navigator.userAgent) && source.type === "click") {
-				return;
-			}
+		dispatch: function( event ) {
+			// Correcting the event object in case we receive a string
+			event = typeof event === "string" ? { type: event } : event;
 
 			var
-				key,
-				event, // The event to be dispatched
-				eventTmp, // A temporary event for IE for CustomEvents
+				handlers = this.cache.events[event.type] || [], // Retrieve the handlers
+				i = 0, count = handlers.length; // Loop specific
 
-				// The supported events type and event interfaces
-				eventsTypes = {
-					FocusEvent: "blur focus focusin focusout",
-					MouseEvent: "click dblclick mousedown mouseenter mouseleave mousemove mouseout mouseover mouseup",
-					WheelEvent: "wheel",
-					KeyboardEvent: "keydown keypress keyup"
-				},
-
-				eventInterface, // The Event Interface for the source type
-				eventPattern = new RegExp(source.type), // A pattern to easily find the Event Interface
-
-				// The event types which are not cancelable and don't bubbles
-				dontBubbles   = /blur|focus|mouseenter|mouseleave/,
-				notCancelable = /blur|focus|mouseenter|mouseleave|focusin|focusout/;
-
-
-			// Correct the source's bubble and cancelable properties
-			source.bubble     = !dontBubbles.test(source.type);
-			source.cancelable = !notCancelable.test(source.type);
-
-			// Loop through eventsTypes to find the right Event Interface to use
-			for (key in eventsTypes) {
-				// Found the right interface to use!
-				if (eventPattern.test(eventsTypes[key])) {
-					eventInterface = key;
-					break;
-				}
+			// Loop through handlers to call them
+			for (; i < count; i++) {
+				handlers[i].call( this, event );
 			}
-
-			// Good browsers implement document.createEvent
-			if (document.createEvent) {
-				// Create a dummy event, creating using the real interface is a nightmare
-				event = document.createEvent("Event");
-
-				// Initialize the event
-				event.initEvent(source.type, source.bubble, source.cancelable);
-
-				// Dispatch!
-				this.element.dispatchEvent(event);
-			} else if (document.createEventObject) { // IE use createEventObject
-				// Create an event
-				event = document.createEventObject();
-
-				// Recopy the source event (initializing)
-				for (key in source) {
-					event[key] = source[key];
-				}
-
-				// Is this a known event?
-				if (eventInterface) {
-					// IE know this event, so dispatch it
-					this.element.fireEvent("on" + source.type, event);
-				} else {
-					// This is a custom event, we need to create a new event
-					eventTmp = document.createEventObject();
-
-					// Save the custom event inside
-					eventTmp.originalEvent = event;
-
-					// Dispatch using the right event name
-					this.element.fireEvent(source.bubble ? "ondataavailable" : "onlosecapture", eventTmp);
-				}
-			} // else we're doomed
-		},*/ // end of exposeEvent()
+		}, // end of dispatch()
 
 
 		/**
@@ -518,13 +472,22 @@
 			// This renderer instance is ready
 			this.isReady = true;
 
+			var
+				cache = this.cache, // Retrieve the events and properties cache
+				type, key; // Loop specific
+
+			// Tell to the plugin to listen those types
+			for (type in cache.events) {
+				this.element.bind( type );
+			}
+
 			// The plugin and element are ready, set the property we wanted to set
-			for (var key in this.propertyCache) {
-				this.set( key, this.propertyCache[key] );
+			for (key in cache.properties) {
+				this.set( key, cache.properties[key] );
 			}
 
 			// We don't need this cache anymore
-			delete this.propertyCache;
+			delete this.cache.properties;
 		}, // end of ready()
 
 
@@ -545,15 +508,51 @@
 					this.element[property] = value;
 				}
 			} else {
-				// Initialize the propertyCache if it doesn't exists
-				if (!this.propertyCache) {
-					this.propertyCache = {};
-				}
-
 				// If the element doesn't exists (not ready or not in the DOM), store properties and values in a cache
-				this.propertyCache[property] = value;
+				this.cache.properties[property] = value;
 			}
 		}, // end of setProperty()
+
+
+		/**
+		 * Emulate the removeEventListener method
+		 * @function
+		 *
+		 * @param {string} type The type of event to clear
+		 * @param {function} handler The handler to remove from the handlers stack
+		 */
+		unbind: function( type, handler ) {
+			var
+				cache = this.cache.events[type], // Retrieve the cache for this event type
+				handlers = [], // The new handlers to use
+				i = 0, count; // Loop specific
+
+			// Quit if there is no handlers registered for this type
+			if (!cache) {
+				return;
+			}
+
+			// Loop through handlers
+			for (count = cache.length; handler && i < count; i++) {
+				if (cache[i] !== handler) {
+					// Keep only the listeners who doesn't match the one we're trying to remove
+					handlers.push( cache[i] );
+				}
+			}
+
+			// We still have some handlers to store in the cache
+			if (handlers.length) {
+				this.cache.events[type] = handlers;
+			} else {
+				if (this.element && this.element.unbind) {
+					// Tell to the plugin to stop listening for this type
+					this.element.unbind( type );
+				}
+
+				// Clean the cache for this event type
+				delete this.cache.events[type];
+			}
+		}, // end of unbind()
 
 
 		// API shorthands

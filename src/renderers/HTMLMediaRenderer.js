@@ -157,6 +157,17 @@
 
 
 		/**
+		 * For HTMLMediaRenderer we can use addEventListener
+		 * @see Renderer.prototype.bind
+		 */
+		bind: function( type, handler ) {
+			if (this.element) {
+				this.element.addEventListener( type, handler, false );
+			}
+		}, // end of bind()
+
+
+		/**
 		 * Fix some browser inconsistencies and bugs
 		 * @function
 		 */
@@ -223,7 +234,18 @@
 
 			// Replace the element with the brand new one
 			element.parentNode.replaceChild( this.element, element );
-		} // end of replace()
+		}, // end of replace()
+
+
+		/**
+		 * For HTMLMediaRenderer we can use removeEventListener
+		 * @see Renderer.prototype.unbind
+		 */
+		unbind: function( type, handler ) {
+			if (this.element) {
+				this.element.removeEventListener( type, handler, false );
+			}
+		} // end of unbind()
 
 	}); // end of Renderer.extend()
 
