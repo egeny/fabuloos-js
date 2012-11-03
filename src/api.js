@@ -84,7 +84,7 @@
 
 			// After setting the config, we ask for a new source (and/or a new renderer)
 			if (delayed) {
-				this.set( "src", config.src );
+				this.set( "src", config );
 			}
 
 			return this; // Chaining
@@ -401,6 +401,9 @@
 				case "src":
 					// Prefer the most specific function for "src" property
 					this.src( value );
+
+					// Makes sure the value is just a string to be setted on the renderer
+					value = value.src ? value.src : value;
 				break;
 			}
 
