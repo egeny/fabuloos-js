@@ -4,12 +4,6 @@
 	// Use JavaScript script mode
 	"use strict";
 
-	var
-		// A collection of regexp used to split and trim
-		rSplit = /\s+/,
-		rTrim  = /^\s+|\s+$/g;
-
-
 	/**
 	 * Fix a given event to fit to the W3C standard in each browsers (abstraction)
 	 * @private @function
@@ -196,7 +190,7 @@
 				type, i = 0; // Loop specific
 
 			// Allow multiple events types separated by a space
-			types = types.replace( rTrim, "" ).split( rSplit ); // Trim first to avoid bad splitting
+			types = types.replace( player.rTrim, "" ).split( player.rSplit ); // Trim first to avoid bad splitting
 
 			// Set a defaut handler in the case we don't need handler (custom events for IE)
 			handler = handler || returnFalse;
@@ -258,7 +252,7 @@
 			}
 
 			// Allow multiple events types separated by a space
-			types = types.replace( rTrim, "" ).split( rSplit ); // Trim first to avoid bad splitting
+			types = types.replace( player.rTrim, "" ).split( player.rSplit ); // Trim first to avoid bad splitting
 
 			// Loop through event types
 			while ((type = types[i++])) {
