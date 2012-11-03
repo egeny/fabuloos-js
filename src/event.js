@@ -6,9 +6,8 @@
 
 	var
 		// A collection of regexp used to split and trim
-		rSplit     = /[\s]+/,
-		rTrimLeft  = /^[\s]+/,
-		rTrimRight = /[\s]+$/;
+		rSplit = /\s+/,
+		rTrim  = /^\s+|\s+$/g;
 
 
 	/**
@@ -142,18 +141,6 @@
 
 
 	/**
-	 * A generic function that return true, used for callbacks
-	 * @private @function
-	 * @ignore
-	 *
-	 * @returns {boolean} Return true
-	 */
-	function returnTrue() {
-		return true;
-	}
-
-
-	/**
 	 * A generic function that return false, used for callbacks
 	 * @private @function
 	 * @ignore
@@ -162,6 +149,18 @@
 	 */
 	function returnFalse() {
 		return false;
+	}
+
+
+	/**
+	 * A generic function that return true, used for callbacks
+	 * @private @function
+	 * @ignore
+	 *
+	 * @returns {boolean} Return true
+	 */
+	function returnTrue() {
+		return true;
 	}
 
 
@@ -197,8 +196,7 @@
 				type, i = 0; // Loop specific
 
 			// Allow multiple events types separated by a space
-			types = types.replace( rTrimLeft, "" ).replace( rTrimRight, "" ); // Trim to avoid bad splitting
-			types = types.split( rSplit );
+			types = types.replace( rTrim, "" ).split( rSplit ); // Trim first to avoid bad splitting
 
 			// Set a defaut handler in the case we don't need handler (custom events for IE)
 			handler = handler || returnFalse;
@@ -241,7 +239,83 @@
 		 * @param {function} [handler=undefined] handler The function attached to be removed, remove all handlers if not provided
 		 */
 		remove: function( element, types, handler ) {
+			var
+				cache = getCache( element ),
+				type, i = 0, // Loop specific
+				handlers, j, count; // Loop specific
 
+			// Don't bother if there is no event registered for this element
+			if (!cache) {
+				return;
+			}
+
+			// No types provided, remove all types
+			if (!types) {
+				types = "";
+				for (type in cache.handlers) {
+					types += type + " ";
+				}
+			}
+
+			// Allow multiple events types separated by a space
+			types = types.replace( rTrim, "" ).split( rSplit ); // Trim first to avoid bad splitting
+
+			// Loop through event types
+			while ((type = types[i++])) {
+				// Asking to remove a specific handler
+				if (handler) {
+					// Prepare a new handlers cache
+					handlers = [];
+
+					// Loop through the handlers cache to find the specific handler
+					for (j = 0, count = cache.handlers[type]; j < count; j++) {
+						// Keep the other handlers
+						if (cache.handlers[type][j] !== handler) {
+							handlers.push( cache.handler[type][j] );
+						}
+					}
+
+					// Replace the old cache with the new one
+					cache.handlers[type] = handlers;
+				} else {
+					// Asking to remove all handlers
+					cache.handlers[type].length = 0;
+
+					// But re-initialize the custom events handler for IE
+					if (type === "dataavailable" || type === "losecapture") {
+						cache.handlers[type].push( returnFalse );
+					}
+				} // end of if (handler)
+
+				// Do we have to clean the handlers cache for this type?
+				if (!cache.handlers[type].length) {
+					// Delete this cache entry
+					delete cache.handlers[type];
+
+					// Remove the handle manager for this type
+					if (element.removeEventListener) {
+						element.removeEventListener(type, cache.handleManager, false);
+					} else if (element.detachEvent) {
+						element.detachEvent("on" + type, cache.handleManager);
+					}
+				} // end of if (!cache.handlers[type].length)
+			} // end of while
+
+			// Look if there is types left in the cache (to clean-up)
+			types = false;
+			for (type in cache.handlers) {
+				types = true;
+				break;
+			}
+
+			// If there is no events types left, clean the cache and the element
+			if (!types) {
+				// Remove this element from the cache
+				delete player.event.cache[element[ player.expando ]];
+
+				// Remove the element's expando
+				delete element[ player.expando ];
+			}
 		}, // end of remove()
 
 
