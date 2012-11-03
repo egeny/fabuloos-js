@@ -20,12 +20,12 @@
 		 *
 		 * @returns {fabuloos} Return a player instance or false if the element doesn't exists
 		 */
-		fabuloos = function( id, config ) {
-			if (!fabuloos.instances[id]) {
-				fabuloos.instances[id] = new fabuloos.prototype.init( id, config );
+		fab = function( id, config ) {
+			if (!fab.instances[id]) {
+				fab.instances[id] = new fab.prototype.init( id, config );
 			}
 
-			return fabuloos.instances[id];
+			return fab.instances[id];
 		};
 
 
@@ -34,11 +34,11 @@
 	 * @static
 	 * @type string
 	 */
-	fabuloos.expando = "fabuloos" + (+new Date());
+	fab.expando = "fabuloos" + (+new Date());
 
 
 	// Is the class currently extending itself? Used to prevent code execution on init method during extending
-	fabuloos.extending = false;
+	fab.extending = false;
 
 
 	/**
@@ -46,7 +46,16 @@
 	 * @static
 	 * @type object
 	 */
-	fabuloos.instances = {};
+	fab.instances = {};
+
+
+	/**
+	 * A collection of regexp used to split and trim
+	 * @static
+	 * @type RegExp
+	 */
+	fab.rSplit = /\s+/;
+	fab.rTrim  = /^\s+|\s+$/g;
 
 
 	/**
@@ -54,10 +63,10 @@
 	 * @static
 	 * @type string
 	 */
-	fabuloos.version = "@VERSION";
+	fab.version = "@VERSION";
 
 
-	fabuloos.prototype = {
+	fab.prototype = {
 
 		/**
 		 * The ID attribute of the enhanced element
@@ -101,7 +110,7 @@
 		 */
 		init: function( id, config ) {
 			// Don't execute while extending
-			if (fabuloos.extending) {
+			if (fab.extending) {
 				return;
 			}
 
@@ -144,11 +153,18 @@
 
 			// Finally, save the received config
 			this.config( _config );
+
+			// Use a closure to prepare a handleManager to correct the "this" keyword when receiving an event from a renderer
+			this.handleManager = (function( instance ){
+				return function() {
+					return instance.trigger.apply( instance, arguments );
+				};
+			}( this ));
 		} // end of init()
 	};
 
 	// Set the init's prototype to fabuloos' one to allow instanciation of fabuloos using init
-	fabuloos.prototype.init.prototype = fabuloos.prototype;
+	fab.prototype.init.prototype = fab.prototype;
 
 
 	/**
@@ -165,9 +181,9 @@
 	 *  });
 	 *  </code>
 	 */
-	fabuloos.extend = function( obj ) {
+	fab.extend = function( obj ) {
 		// We are extending the main class, prevent code execution on init when copying the prototype
-		fabuloos.extending = true;
+		fab.extending = true;
 
 		var
 			// Set a RegExp to test for _super calls in methods
@@ -217,11 +233,11 @@
 		this.prototype.init.prototype = this.prototype;
 
 		// We're not extending anymore
-		fabuloos.extending = false;
+		fab.extending = false;
 	}; // end of extend()
 
 
 	// Expose
-	scope.fab = scope.fabuloos = fabuloos;
+	scope.fabuloos = scope.fab = fab;
 
 }( window )); // end of Core module
