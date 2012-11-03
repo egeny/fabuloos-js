@@ -185,7 +185,7 @@
 		// Override API shorthands
 		play: Renderer.createShorthand( "_play" ) // this.element.play() is reserved by ActiveX, use _play
 
-	});
+	}); // end of Renderer.extend()
 
 	// Expose
 	scope.FlashMediaRenderer = FlashMediaRenderer;

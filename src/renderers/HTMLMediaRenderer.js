@@ -5,6 +5,10 @@
 
 	/*global Renderer */
 
+	var
+		dontBubbles   = /blur|focus|mouseenter|mouseleave/,
+		notCancelable = /blur|focus|mouseenter|mouseleave|focusin|focusout/;
+
 	/**
 	 * HTMLMediaRenderer
 	 * @constructor
@@ -165,6 +169,29 @@
 				this.element.addEventListener( type, handler, false );
 			}
 		}, // end of bind()
+
+
+		/**
+		 * For HTMLMediaRenderer we can use dispatchEvent
+		 * @see Renderer.prototype.dispatch
+		 */
+		dispatch: function( event ) {
+			if (this.element) {
+				var
+					type       = typeof event === "string" ? event : event.type, // Determine the event type
+					bubble     = !dontBubbles.test( type ), // Check if this type bubbles
+					cancelable = !notCancelable.test( type ); // Check if this type is cancelable
+
+				// Create a dummy event, creating using the real interface is a nightmare
+				event = document.createEvent( "Event" );
+
+				// Initialize the event
+				event.initEvent( type, bubble, cancelable );
+
+				// Dispatch!
+				this.element.dispatchEvent( event );
+			}
+		}, // end of dispatch()
 
 
 		/**
