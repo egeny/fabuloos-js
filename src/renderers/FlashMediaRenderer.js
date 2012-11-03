@@ -148,9 +148,10 @@
 		 * @param {string} property The property's value to set
 		 * @param {*} value The new property value
 		 */
-		/*exposeProperty: function( property, value ) {
+		exposeProperty: function( property, value ) {
+			// TODO: Refactoring needed
 			this.element[property] = value;
-		},*/ // end of exposeProperty()
+		}, // end of exposeProperty()
 
 
 		/**
