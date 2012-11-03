@@ -33,9 +33,14 @@
 	} // end of FlashMediaRenderer constructor
 
 
+	// Set the constructor name if it doesn't exists (IE)
+	// Beware to only set it if undefined, this property is read-only in strict mode
+	if (!FlashMediaRenderer.name) {
+		FlashMediaRenderer.name = "FlashMediaRenderer";
+	}
+
 	FlashMediaRenderer.prototype = new Renderer(); // Inherit from Renderer
 	FlashMediaRenderer.prototype.constructor = FlashMediaRenderer; // Don't forget to correct the constructor
-	FlashMediaRenderer.prototype.constructor.name = "FlashMediaRenderer"; // Useful for IE
 
 
 	/**

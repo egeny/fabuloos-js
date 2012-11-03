@@ -88,9 +88,14 @@
 	} // end of HTMLMediaRenderer constructor
 
 
+	// Set the constructor name if it doesn't exists (IE)
+	// Beware to only set it if undefined, this property is read-only in strict mode
+	if (!HTMLMediaRenderer.name) {
+		HTMLMediaRenderer.name = "HTMLMediaRenderer";
+	}
+
 	HTMLMediaRenderer.prototype = new Renderer(); // Inherit from Renderer
 	HTMLMediaRenderer.prototype.constructor = HTMLMediaRenderer; // Don't forget to correct the constructor
-	HTMLMediaRenderer.prototype.constructor.name = "HTMLMediaRenderer"; // Useful for IE
 
 
 	/**
