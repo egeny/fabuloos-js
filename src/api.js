@@ -27,17 +27,25 @@
 		togglerProperties = "autoplay controls loop muted";
 
 
+	// Extend the player with new methods
 	player.extend({
 
 		/**
-		 * Attach all listeners to the player
+		 * Attach all listeners to the renderer
 		 * @function
 		 *
 		 * @returns {fabuloos} Return the current instance of the player to allow chaining
 		 */
 		attach: function() {
-			// Use the static attach function
-			player.event.attach( this );
+			var
+				type, // Loop specific
+				cache = player.event.cache[this[ player.expando ]] || []; // Retrieve the events' handlers cache for this instance
+
+			// Loop through each handlers types
+			for (type in cache.handlers) {
+				// Ask the renderer to bind this type to the internal handler manager
+				this._renderer.bind( type, this.handleManager );
+			}
 
 			return this; // Chaining
 		}, // end of attach()
@@ -84,14 +92,21 @@
 
 
 		/**
-		 * Detach all listeners from the player
+		 * Detach all listeners from the renderer
 		 * @function
 		 *
 		 * @returns {fabuloos} Return the current instance of the player to allow chaining
 		 */
 		detach: function() {
-			// Use the static detach function
-			player.event.detach( this );
+			var
+				type, // Loop specific
+				cache = player.event.cache[this[ player.expando ]] || []; // Retrieve the events' handlers cache for this instance
+
+			// Loop through each handlers types
+			for (type in cache.handlers) {
+				// Ask the renderer to unbind this type to the internal handler manager
+				this._renderer.unbind( type, this.handleManager );
+			}
 
 			return this; // Chaining
 		}, // end of detach()
@@ -138,6 +153,83 @@
 
 			return this; // Chaining
 		}, // end of load()
+
+
+		/**
+		 * Register an handler for a given event
+		 * @function
+		 *
+		 * @param {string} type Event type(s)
+		 * @param {function} handler The function to call when the event type is fired
+		 * @param {object} data The data to pass to the handler when calling it
+		 *
+		 * @returns {fabuloos} Return the current instance of the player to allow chaining
+		 *
+		 * @example
+		 * <code>
+		 *   fabuloos(…)
+		 *    .on( "play", function() { console.log("play event"); } )
+		 *    .on( "pause", handlePause );
+		 * </code>
+		 * We can also register multiple events for the same handler:
+		 * <code>
+		 *   fabuloos(…).on( "play pause", handleTogglePlay );
+		 * </code>
+		 */
+		on: function( types, handler, data ) {
+			var type, i = 0; // Loop specific
+
+			// Register the handler for this type
+			player.event.add( this, types, handler, data );
+
+			// Allow multiple events types separated by a space
+			types = types.replace( player.rTrim, "" ).split( player.rSplit ); // Trim first to avoid bad splitting
+
+			// Ask the renderer (if any) to bind this event type to the instance's handle manager
+			while (this._renderer && (type = types[i++])) {
+				this._renderer.bind( type, this.handleManager );
+			}
+
+			return this; // Chaining
+		}, // end of on()
+
+
+		/**
+		 * Unregister an handler for a given event
+		 * @function
+		 *
+		 * @param {string} types Event type(s), may be null (will remove all handlers)
+		 * @param {function} handler The handler previously attached, may be null (will remove all handlers for the type)
+		 *
+		 * @returns {fabuloos} Return the current instance of the player to allow chaining
+		 *
+		 * @example
+		 * <code>
+		 *   fabuloos(…)
+		 *    .off() // Will remove all listeners
+		 *    .off( "", handle ) // Will remove "handle" for each types
+		 *    .off( "pause" ) // Will remove all listeners for the "pause" event type
+		 *    .off( "pause", handle ) // Will remove "handle" for the "pause" event type
+		 *    .off( "play pause" ) // Will remove all listeners for the "play" and "pause" event types
+		 *    .off( "play pause", handle ); // Will remove "handle" for the "play" and "pause" event types
+		 * </code>
+		 */
+		off: function( types, handler ) {
+			var type, i = 0; // Loop specific
+
+			// Unregister the handler for this type
+			player.event.remove( this, types, handler );
+
+			// Allow multiple events types separated by a space
+			types = types.replace( player.rTrim, "" ).split( player.rSplit ); // Trim first to avoid bad splitting
+
+			// Ask the renderer (if any) to unbind this event type to the instance's handle manager
+			while (this._renderer && (type = types[i++])) {
+				this._renderer.unbind( type, this.handleManager );
+			}
+
+			return this; // Chaining
+		}, // end of off()
 
 
 		/**
@@ -223,8 +315,8 @@
 
 			// Check if the renderer is supported before creating it
 			if (!renderer.isSupported) {
-				// TODO: dispatch a better event
-				return this.dispatch( "error" );
+				// TODO: Trigger a better event
+				return this.trigger( "error" );
 			}
 
 			var
@@ -396,7 +488,7 @@
 					continue;
 				}
 
-				// Save the result to check if we didn't find a new renderer (and dispatch error event)
+				// Save the result to check if we didn't find a new renderer (and trigger error event)
 				canPlay = canPlayUsing( renderer );
 
 				// Test if the renderer can play the source
@@ -411,8 +503,8 @@
 
 			// No renderer found capable of playing this source
 			if (!canPlay) {
-				// TODO: Dispatch another kind of event
-				this.dispatch( "error" );
+				// TODO: Trigger another kind of event
+				this.trigger( "error" );
 			}
 
 			return this; // Chaining
@@ -456,5 +548,53 @@
 		} // end of trigger()
 
 	}); // end of player.extend()
+
+
+	// Extending the player with getters, setters and togglers
+	(function() {
+
+		var
+			obj = {}, // An empty object which will contain the getters/setters/togglers method, will be merge with the player's prototype
+			i = 0, // Loop specific
+			properties = getterProperties.split( " " ), // The getters properties (basically, all properties)
+			count = properties.length, // Count the properties to loop into
+			property, Property; // Loop specific (neater)
+
+		// Create a magic function to create a getter/setter
+		function create( property ) {
+			return function() {
+				return this[(arguments.length ? "set" : "get")]( property, arguments[0] );
+			};
+		}
+
+		// Create a magic function to create toggler
+		function createToggler(property) {
+			return function() {
+				return this.toggle( property );
+			};
+		}
+
+		// Loop through each properties
+		for (; i < count; i++) {
+			property = properties[i]; // The property
+			Property = property.charAt( 0 ).toUpperCase() + property.slice( 1 ); // Camelcase the property name to append to "toggle"
+
+			// Generate the getter/setter method, ignore existing properties
+			if (!player.prototype[property]) {
+				obj[property] = create( property );
+			}
+
+			// Does this property has a toggler too?
+			// Check if there is already a toggle with this name (handle manually written togglers)
+			if (new RegExp( property).test( togglerProperties ) && !player.prototype["toggle" + Property]) {
+				// Let's make the method (after, we'll go to the mall)
+				obj["toggle" + Property] = createToggler( property );
+			}
+		}
+
+		// Extend the prototype with the shorthands generated
+		player.extend( obj );
+
+	}()); // end of scope used to create getters/setters/togglers
 
 }( fabuloos )); // end of API module
