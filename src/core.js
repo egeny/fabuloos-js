@@ -105,8 +105,10 @@
 		 * @returns {fabuloos} Return a new player instance or false if the element doesn't exists
 		 *
 		 * @example
-		 *  var player = fabuloos( "media" );
-		 *  var player = fabuloos( "media", { width: 720 } );
+		 *  <code>
+		 *    var player = fabuloos( "media" );
+		 *    var player = fabuloos( "media", { width: 720 } );
+		 *  </code>
 		 */
 		init: function( id, config ) {
 			// Don't execute while extending
@@ -176,9 +178,9 @@
 	 *
 	 * @example
 	 *  <code>
-	 *  fabuloos.extend({
-	 *    play: function() {}
-	 *  });
+	 *    fabuloos.extend({
+	 *      play: function() {}
+	 *    });
 	 *  </code>
 	 */
 	fab.extend = function( obj ) {
