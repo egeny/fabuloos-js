@@ -13,7 +13,7 @@ module.exports = function(grunt) {
 			version: '1.0'
 		},
 		lint: {
-			files: ['grunt.js', '<config:concat.dist.src>', 'test/**/*.js']
+			files: ['grunt.js', '<config:concat.dist.src>', 'test/*.js']
 		},
 		qunit: {
 			files: ['test/**/*.html']
