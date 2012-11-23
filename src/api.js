@@ -24,11 +24,103 @@
 		 * The properties we can toggle
 		 * @type {string}
 		 */
-		togglerProperties = "autoplay controls loop muted";
+		togglerProperties = "autoplay controls loop muted",
+
+		/**
+		 * A RegExp used to check if a string is a timestamp
+		 * @type {RegExp}
+		 */
+		rTimestamp = /(\d+(?:\.\d+)?)(?=[:hms]|$)/,
+
+		/**
+		 * A RegExp used to retrieve the number of seconds in a timestamp string
+		 * @type {RegExp}
+		 */
+		rSeconds = /(\d+)s|(\d+(?:\.\d+)?)$/,
+
+		/**
+		 * A RegExp used to retrieve the number of minutes in a timestamp string
+		 * @type {RegExp}
+		 */
+		rMinutes = /(\d+)m|(?:\d+:)?(\d+)(?=:)/,
+
+		/**
+		 * A RegExp used to retrieve the number of hours in a timestamp string
+		 * @type {RegExp}
+		 */
+		rHours = /(\d+)h|^(\d+)(?::\d+){2}/;
+
+
+	/**
+	 * Attach or detach all listeners to the renderer. Used for renderer changing.
+	 * @private @function
+	 *
+	 * @param {fabuloos} The fabuloos instance to use for attaching/detaching
+	 * @param {string} The method to call on the renderer ("bind" or "unbind")
+	 */
+	function attachOrDetach( instance, method ) {
+		// Don't bother if we don't have any renderer
+		if (!instance._renderer) {
+			return instance;
+		}
+
+		var
+			type, // Loop specific
+			cache = player.event.cache[instance[ player.expando ]] || []; // Retrieve the events' handlers cache for this instance
+
+		// Loop through each handlers types
+		for (type in cache.handlers) {
+			// Ask the renderer to bind this type to the internal handler manager
+			instance._renderer[method]( type, instance.handleManager );
+		}
+
+		return instance; // Chaining
+	} // end of attachOrDetach()
 
 
 	// Extend the player with new methods
 	player.extend({
+		/**
+		 * Register an handler to be triggered at a given timestamp
+		 * @function
+		 *
+		 * @param {number|string} timestamp The timestamp when to trigger the handler
+		 * @param {function} handler The function to call when the timestamp will be reached
+		 * @param {boolean} once TODO
+		 *
+		 * @returns {fabuloos} Return the current instance of the player to allow chaining
+		 *
+		 * @example
+		 *  <code>
+		 *    fabuloos(…)
+		 *      .at( 1367, handle ), // Launch the "handle" function at 1367 sec
+		 *      .at( "3:10", handle ), // Launch the "handle" function at 3 minutes and 10 seconds
+		 *      .at( "1h03m10s", handle ), // Launch the "handle" function at 1 hour, 3 minutes and 10 seconds
+		 *      .at( "50%", handle ), // Launch the "handle" function when the timestamp will reach 50% of the duration
+		 *      .at( "half", handle ); // Launch the "handle" function when the timestamp will reach the "half" of the duration (@see fabuloos.TODO)
+		 *  </code>
+		 */
+		at: function( timestamp, handler, once ) {
+			/*if (!this.atHandler) {
+				this.atHandler = function() {
+
+					this.timer = window.setTimeout( arguments.callee, delta );
+				};
+
+				this.on( "timeupdate", this.atHandler );
+			}
+
+			if (!this.cache) {
+				this.cache = {};
+			}
+
+			if (!this.cache[timestamp]) {
+				this.cache[timestamp] = [];
+			}
+
+			this.cache[timestamp].push( handler );*/
+		}, // end of at()
+
 
 		/**
 		 * Attach all listeners to the renderer
@@ -37,18 +129,16 @@
 		 * @returns {fabuloos} Return the current instance of the player to allow chaining
 		 */
 		attach: function() {
-			var
-				type, // Loop specific
-				cache = player.event.cache[this[ player.expando ]] || []; // Retrieve the events' handlers cache for this instance
-
-			// Loop through each handlers types
-			for (type in cache.handlers) {
-				// Ask the renderer to bind this type to the internal handler manager
-				this._renderer.bind( type, this.handleManager );
-			}
-
-			return this; // Chaining
+			return attachOrDetach( this, "bind" );
 		}, // end of attach()
+
+
+		/**
+		 * TODO
+		 */
+		between: function( start, end, handler, once, every ) {
+
+		}, // end of between()
 
 
 		/**
@@ -98,18 +188,16 @@
 		 * @returns {fabuloos} Return the current instance of the player to allow chaining
 		 */
 		detach: function() {
-			var
-				type, // Loop specific
-				cache = player.event.cache[this[ player.expando ]] || []; // Retrieve the events' handlers cache for this instance
-
-			// Loop through each handlers types
-			for (type in cache.handlers) {
-				// Ask the renderer to unbind this type to the internal handler manager
-				this._renderer.unbind( type, this.handleManager );
-			}
-
-			return this; // Chaining
+			return attachOrDetach( this, "unbind" );
 		}, // end of detach()
+
+
+		/**
+		 * TODO
+		 */
+		every: function( timestamp, handler, relative ) {
+
+		}, // end of every()
 
 
 		/**
@@ -291,6 +379,21 @@
 
 			return this; // Chaining
 		}, // end of play()
+
+
+		/**
+		 * Get the player's ratio
+		 * @function
+		 *
+		 * @returns {float} Return the player's ratio or 0 if the player has no width or height
+		 */
+		ratio: function() {
+			var
+				width  = this.width(),
+				height = this.height();
+
+			return (width && height) ? width / height : 0;
+		}, // end of ratio()
 
 
 		/**
@@ -548,9 +651,109 @@
 		 */
 		trigger: function( type ) {
 			return player.event.trigger( this, type );
-		} // end of trigger()
+		}, // end of trigger()
+
+
+		/**
+		 * Get the video's ratio
+		 * @function
+		 *
+		 * @returns {float} Return the video's ratio or 0 if the metadata wasn't received yet or if there is no video
+		 */
+		videoRatio: function() {
+			var
+				width  = this.videoWidth(),
+				height = this.videoHeight();
+
+			return (width && height) ? width / height : 0;
+		}, // end of ratio()
+
+
+		/**
+		 * Get the full viewport's infos
+		 * @function
+		 *
+		 * @returns {object} Return the full viewport infos (size and position) or undefined if none
+		 */
+		viewport: function() {
+			var
+				// Get player's size
+				width       = this.width(),
+				height      = this.height(),
+				ratio       = this.ratio(),
+
+				// Get video's size
+				videoWidth  = this.videoWidth(),
+				videoHeight = this.videoHeight(),
+				videoRatio  = this.videoRatio(),
+
+				horizontal, vertical, // Horizontal and vertical spacing
+				viewport    = {}; // The object to return
+
+			// There is no viewport
+			if (!videoRatio) {
+				return;
+			}
+
+			// Calculate the viewport size
+			if (videoRatio > ratio) {
+				viewport.width  = width;
+				viewport.height = Math.floor( videoHeight * (width / videoWidth) );
+			} else {
+				viewport.width  = Math.floor( videoWidth * (height / videoHeight) );
+				viewport.height = height;
+			}
+
+			// Calculate horizontal and vertical spacing
+			horizontal = (width  - viewport.width)  / 2;
+			vertical   = (height - viewport.height) / 2;
+
+			// Define top, right, bottom and left
+			viewport.top    = Math.floor( vertical );
+			viewport.right  = Math.ceil( horizontal );
+			viewport.bottom = Math.ceil( vertical );
+			viewport.left   = Math.floor( horizontal );
+
+			return viewport;
+		} // end of viewport()
 
 	}); // end of player.extend()
+
+
+	/**
+	 * Convert a timestamp string to a number of seconds
+	 * @static @function
+	 *
+	 * @param {string} timestamp The timestamp to convert
+	 *
+	 * @returns Return the number of seconds extracted from the timestamp
+	 *
+	 * @example
+	 *  <code>
+	 *    fabuloos.toSeconds( "10" ); // Return 10
+	 *    fabuloos.toSeconds( "1:23" ); // Return 83
+	 *    fabuloos.toSeconds( "1:23:45" ); // Return 5025
+	 *    fabuloos.toSeconds( "1s" ); // Return 1
+	 *    fabuloos.toSeconds( "2m" ); // Return 120
+	 *    fabuloos.toSeconds( "3h" ); // Return 10800
+	 *    fabuloos.toSeconds( "1m23" ); // Return 83
+	 *    fabuloos.toSeconds( "1h23s" ); // Return 3623
+	 *  </code>
+	 */
+	player.toSeconds = function( timestamp ) {
+		timestamp += ""; // Force string conversion
+
+		var
+			s = timestamp.match( rSeconds ),
+			m = timestamp.match( rMinutes ),
+			h = timestamp.match( rHours );
+
+		s = s ? parseFloat( s[1] || s[2] || 0 )   : 0;
+		m = m ? parseInt( m[1] || m[2] || 0, 10 ) : 0;
+		h = h ? parseInt( h[1] || h[2] || 0, 10 ) : 0;
+
+		return (h * 3600) + (m * 60) + s;
+	}; // end of toSeconds()
 
 
 	// Extending the player with getters, setters and togglers
@@ -571,7 +774,7 @@
 		}
 
 		// Create a magic function to create toggler
-		function createToggler(property) {
+		function createToggler( property ) {
 			return function() {
 				return this.toggle( property );
 			};
