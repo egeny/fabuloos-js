@@ -42,6 +42,9 @@
 	FlashMediaRenderer.prototype = new Renderer(); // Inherit from Renderer
 	FlashMediaRenderer.prototype.constructor = FlashMediaRenderer; // Don't forget to correct the constructor
 
+	// The plugin file to use (this var is used to easily set the file URL)
+	FlashMediaRenderer.file = "FlashMediaRenderer.swf";
+
 
 	/**
 	 * Default plugin configuration
@@ -52,7 +55,7 @@
 		width:  720,
 		height: 405,
 		type: "application/x-shockwave-flash",
-		data: "FlashMediaRenderer.swf",
+		data: FlashMediaRenderer.file,
 		params: {
 			allowscriptaccess: "always",
 			wmode: "transparent"
