@@ -691,12 +691,12 @@
 				viewport    = {}; // The object to return
 
 			// There is no viewport
-			if (!videoRatio) {
+			if (!ratio || !videoRatio) {
 				return;
 			}
 
 			// Calculate the viewport size
-			if (videoRatio > ratio) {
+			if (ratio < videoRatio) {
 				viewport.width  = width;
 				viewport.height = Math.floor( videoHeight * (width / videoWidth) );
 			} else {
