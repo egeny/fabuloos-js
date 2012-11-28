@@ -462,8 +462,18 @@
 		get: function( property ) {
 			// Width and height must be found in a specific way
 			if (property === "width" || property === "height") {
-				// Return the computedStyle if available or the currentStyle
-				return this.element ? parseFloat(window.getComputedStyle ? window.getComputedStyle( this.element, null ).getPropertyValue( property ) : this.element.currentStyle[property]) : 0;
+				// Don't bother if we haven't any element to measure
+				if (!this.element) { return 0; }
+
+				var value = window.getComputedStyle ?
+					// Pass a second argument (null) to getComputedStyle for compatibility reasons
+					// @see https://developer.mozilla.org/en-US/docs/DOM/window.getComputedStyle
+					window.getComputedStyle( this.element, null ).getPropertyValue( property ) :
+					// Use the scrollWidth/scrollHeight property since it is calculated in a different way in IE
+					this.element["scroll" + property.charAt( 0 ).toUpperCase() + property.slice( 1 )];
+
+				// parseFloat to avoid units (px, em, etc.)
+				return parseFloat( value );
 			}
 
 			return this.element ? ((typeof this.element.get === "function") ? this.element.get( property ) : this.element[property]) : undefined;
