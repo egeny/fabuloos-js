@@ -413,7 +413,7 @@
 
 		 * @example
 		 *  <code>
-		 *    var player = fabuloos( "video" );
+		 *    var player = fabuloos( "media" );
 		 *    player.play(); // Launch the playback
 		 *    player.play( "http://example.org/file.mp4" ); // Launch a specific source
 
@@ -527,7 +527,7 @@
 		 *
 		 * @example
 		 * <code>
-		 *   var player = fabuloos( "video" );
+		 *   var player = fabuloos( "media" );
 		 *   player.set( "autoplay", true );
 		 * </code>
 		 */
@@ -592,7 +592,7 @@
 		 *
 		 * @example
 		 * <code>
-		 *   var player = fabuloos( "video" );
+		 *   var player = fabuloos( "media" );
 		 *   player.src(); // Get the current source
 		 *
 		 *   player.src( "http://example.org/file.mp4" ); // Set the source
@@ -683,7 +683,7 @@
 		 *
 		 * @example
 		 *  <code>
-		 *    var player = fabuloos( "video" );
+		 *    var player = fabuloos( "media" );
 		 *    player.toggle( "autoplay" );
 		 *  </code>
 		 */
