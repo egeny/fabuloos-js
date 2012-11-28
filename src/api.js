@@ -142,6 +142,62 @@
 
 
 		/**
+		 * Create a closure to launch a command
+		 * @function
+		 *
+		 * @params {string} cmd The command to launch.
+		 *   The other arguments will be passed to the command.
+		 *   The arguments passed to the closure will be concatenate to arguments used when calling this method.
+		 *
+		 * @returns {function} Return a closure which will call the command
+		 *
+		 * @example
+		 *  <code>
+		 *    var player = fabuloos( "media" );
+		 *    player.on( "ended", player.closure( "src", "http://example.org/file.mp4" ) ); // Automatically change the source when the first is finished
+		 *    player.on( "ended", player.closure( "currentTime", 0 ) ); // Rewind when the media end
+		 *    fab.bind( btn, player.closure( "play" ) ); // Bind a button to launch a command
+		 *  </code>
+		 */
+		closure: function( cmd ) {
+			var
+				that = this, // Save a reference to this instance
+				args = Array.prototype.slice.call( arguments ); // Convert arguments to a real array
+
+			return function() {
+				// Call the command, pass the arguments from the previous closure, merge with this closure arguments
+				return that.cmd.apply( that, args.concat( Array.prototype.slice.call( arguments ) ) );
+			};
+		}, // end of closure()
+
+
+		/**
+		 * Launch a command on the instance
+		 * @function
+		 *
+		 * @params {string} cmd The command to launch. The other arguments will be passed to the command.
+		 *
+		 * @returns {fabuloos|*} Return the result of the command or undefined if the command doesn't exists
+		 *
+		 * @example
+		 *  <code>
+		 *    var player = fabuloos( "media" );
+		 *    player.cmd( "pause" ); // Return player to allow chaining
+		 *    player.cmd( "paused" ); // Return true or false
+		 *    player.cmd( "src", "http://example.org/file.mp4" ); // Return player to allow chaining
+		 *    player.cmd( "foo" ); // Return undefined
+		 *  </code>
+		 */
+		cmd: function( cmd ) {
+			// Convert arguments to a real array
+			var args = Array.prototype.slice.call( arguments );
+			args.shift(); // Remove the first argument (the command name)
+
+			return this[cmd] ? this[cmd].apply( this, args ) : undefined;
+		}, // end of cmd()
+
+
+		/**
 		 * Get or set the configuration
 		 * @function
 		 *
@@ -229,7 +285,7 @@
 		 *  <code>
 		 *    var player = fabuloos( "media" );
 		 *    player
-		 *      .set( "src", "http://localhost/file.mp4" )
+		 *      .set( "src", "http://example.org/file.mp4" )
 		 *      .set( "autoplay", true )
 		 *      .load();
 		 *  </code>
@@ -539,16 +595,16 @@
 		 *   var player = fabuloos( "video" );
 		 *   player.src(); // Get the current source
 		 *
-		 *   player.src( "http://example.org/video.mp4" ); // Set the source
+		 *   player.src( "http://example.org/file.mp4" ); // Set the source
 		 *
 		 *   // Set the source using object
 		 *   player.src({
-		 *     src: "http://example.org/video.mp4"
+		 *     src: "http://example.org/file.mp4"
 		 *   });
 		 *
 		 *   // Set the source using object and helping by providing the correct MIME type
 		 *   player.src({
-		 *     src: "http://example.org/video.mp4",
+		 *     src: "http://example.org/file.mp4",
 		 *     type: "video/mp4"
 		 *   });
 		 * </code>
