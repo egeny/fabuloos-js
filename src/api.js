@@ -698,6 +698,17 @@
 
 
 		/**
+		 * Toggle the playback of the media
+		 * @function
+		 *
+		 * @returns {fabuloos} Return the current instance of the player to allow chaining
+		 */
+		togglePlay: function() {
+			return this[this.paused() ? "play" : "pause"](); // Chaining
+		}, // end of togglePlay()
+
+
+		/**
 		 * Trigger the listeners for a type. Warning: breaks the chaining.
 		 * @function
 		 *
