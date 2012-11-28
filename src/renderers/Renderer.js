@@ -463,7 +463,7 @@
 			// Width and height must be found in a specific way
 			if (property === "width" || property === "height") {
 				// Return the computedStyle if available or the currentStyle
-				return this.element ? parseFloat(window.getComputedStyle ? window.getComputedStyle( this.element ).getPropertyValue( property ) : this.element.currentStyle[property]) : 0;
+				return this.element ? parseFloat(window.getComputedStyle ? window.getComputedStyle( this.element, null ).getPropertyValue( property ) : this.element.currentStyle[property]) : 0;
 			}
 
 			return this.element ? ((typeof this.element.get === "function") ? this.element.get( property ) : this.element[property]) : undefined;
