@@ -407,10 +407,10 @@
 			}
 
 			// If this renderer has an element and this element have a bind method (plugins)
-			/*if (this.element && this.element.bind) {
+			if (this.element && this.element.bind) {
 				// Ask the element (plugin) to listen for this type of event
 				this.element.bind( type );
-			}*/
+			}
 
 			// Save the handler in the cache
 			this.cache.events[type].push( handler );
@@ -492,10 +492,13 @@
 				cache = this.cache, // Retrieve the events and properties cache
 				type, key; // Loop specific
 
-			// Tell to the plugin to listen those types
-			/*for (type in cache.events) {
-				this.element.bind( type );
-			}*/
+			// Check if the bind method exists since sometime it doesn't for an unknown reason
+			if (this.element.bind) {
+				// Tell to the plugin to listen those types
+				for (type in cache.events) {
+					this.element.bind( type );
+				}
+			}
 
 			// The plugin and element are ready, set the property we wanted to set
 			for (key in cache.properties) {
