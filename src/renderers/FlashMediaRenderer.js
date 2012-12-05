@@ -102,8 +102,12 @@
 	 * @static
 	 * @type {boolean}
 	 */
-	FlashMediaRenderer.isOldIE = +"\v1";
-	FlashMediaRenderer.isOldIE = !FlashMediaRenderer.isOldIE; // Used for JSHint compliance ;)
+	// The old !+"\v1" is deprecated since it is badly minified using UglifyJS
+	// Instead, use browser sniffing (sorry...)
+	FlashMediaRenderer.isOldIE = (function() {
+		var match = navigator.userAgent.match(/MSIE (\d+)/);
+		return match ? match[1] < 9 : false;
+	}());
 
 
 	/**
