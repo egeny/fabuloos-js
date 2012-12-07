@@ -26,11 +26,11 @@ module.exports = function(grunt) {
 					'src/renderers/FlashMediaRenderer.js',
 					'src/core.js',
 					'src/event.js',
+					'src/tracks.js',
 					'src/api.js',
 					'src/plugins/playlist.js',
 					'src/plugins/tracker.js',
-					'src/plugins/ads.js',
-					'src/plugins/tracks.js'
+					'src/plugins/ads.js'
 				],
 				dest: 'build/' + name + '.js'
 			}
