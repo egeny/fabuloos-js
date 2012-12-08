@@ -239,7 +239,35 @@
 	}; // end of extend()
 
 
+	/**
+	 * Exception class
+	 * @constructor
+	 *
+	 * @params {number} code The error code to create
+	 *
+	 * @returns {Exception} A new Exception instance
+	 */
+	function Exception( code ) {
+		this.name = "fabuloos error";
+		this.code = code;
+
+		// Loop through each property to find the static var related to this code
+		for (var prop in Exception) {
+			if (Exception[prop] === code) {
+				this.message = prop;
+			}
+		}
+	} // end of Exception constructor
+
+	Exception.prototype = new Error(); // Inherit from Error
+	Exception.prototype.constructor = Exception; // Don't forget to correct the constructor
+
+	// Mimic the DOMException error codes
+	Exception.NOT_FOUND_ERR = 8;
+
+
 	// Expose
+	fab.Exception  = Exception;
 	scope.fabuloos = scope.fab = fab;
 
 }( window )); // end of Core module
