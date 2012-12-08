@@ -6,20 +6,20 @@
 
 	/**
 	 * The base Item class
-	 * @abstract @constructor
+	 * @constructor
 	 *
 	 * @returns {Item} A new Item instance
 	 */
-	function Item() {} // end of Item()
+	function Item() {} // end of Item constructor
 
 
 	/**
 	 * The base List class
-	 * @abstract @constructor
+	 * @constructor
 	 *
 	 * @returns {List} A new List instance
 	 */
-	function List() {} // end of List()
+	function List() {} // end of List constructor
 
 
 	/**
@@ -50,7 +50,7 @@
 		for (var method in filters) {
 			this.prototype[method] = List.createFilter( filters[method] );
 		}
-	};
+	}; // end of createFilters()
 
 
 	/**
@@ -80,7 +80,7 @@
 				tracks[method]();
 			}
 		};
-	}; // end of createShorthand
+	}; // end of createShorthand()
 
 
 	/**
@@ -93,7 +93,7 @@
 		for (var method in shorthands) {
 			this.prototype[shorthands[method]] = List.createShorthand( shorthands[method] );
 		}
-	};
+	}; // end of createShorthands()
 
 
 	/**
@@ -136,7 +136,7 @@
 		 *   Might be undefined (will reset the list), a number (will be used as index) or an item (will search for it)
 		 */
 		this.del = function( item ) {
-			if (!item) {
+			if (item === undefined) {
 				// No argument, we will reset all the list
 				this.length( 0 );
 			} else if (typeof item === "number") {
@@ -201,7 +201,7 @@
 			}
 
 			// No filter means act like a getter
-			if (!filter) {
+			if (filter === undefined) {
 				return this; // Return the whole List instance
 			} else if (typeof filter === "number") {
 				// If the filter is a number, return the item of the list associated to the index
@@ -240,6 +240,36 @@
 
 
 		/**
+		 * Retrieve the index of an item
+		 * @function
+		 *
+		 * @params {Item} The item to look for
+		 *
+		 * @returns {undefined|number} Return undefined (if the arguments isn't an instance of Item) or the index of the item
+		 *
+		 * @throws {Exception} Throw a NOT_FOUND_ERR if the item wasn't found
+		 */
+		this.index = function( item ) {
+			// Makes sure we're looking for an Item
+			if (!(item instanceof this.constructor.item)) {
+				return;
+			}
+
+			// Look for the index
+			// The "continue" is useless but needed for lint
+			for (var i = 0, count = list.length; i < count && list[i] !== item; i++) { continue; }
+
+			// Throw a NOT_FOUND_ERR exception if the index wasn't found
+			if (i === count) {
+				throw new player.Exception( player.Exception.NOT_FOUND_ERR );
+			}
+
+			// Return the index
+			return i;
+		}; // end of item();
+
+
+		/**
 		 * Get or set the number of item in the list. Act as a getter without arguments.
 		 * @function
 		 *
@@ -271,11 +301,11 @@
 	List.item = Item;
 
 
-
-
-
 	/**
-	 * TODO
+	 * The Track class
+	 * @constructor
+	 *
+	 * @returns {Track} A new Track instance
 	 */
 	function Track( kind, label, language ) {
 		var
@@ -283,7 +313,7 @@
 			activeCues = new TrackCueList();
 
 		// TODO
-		//oncuechange
+		//this.oncuechange
 
 		// Define the default mode to disabled
 		this.mode = Track.DISABLED;
@@ -297,21 +327,49 @@
 		this.activeCues = function() { return activeCues; };
 
 		/**
-		 * TODO
+		 * Add a cue to the list of cues.
+		 * Implementation of http://dev.w3.org/html5/spec/media-elements.html#dom-texttrack-addcue
+		 * @function
+		 *
+		 * @params {TrackCue} The cue to add. Might be multiple arguments.
 		 */
 		this.addCue = function() {
-			return cues.add.apply( cues, arguments );
+			for (var i = 0, count = arguments.length; i < count; i++) {
+				// Ignore bad arguments
+				if (!(arguments[i] instanceof Item)) { continue; }
+
+				// Try to retrieve on delete the item
+				try {
+					cues.del( cues.index( arguments[i] ) );
+				} catch (e) {}
+
+				// Add the cue to the cue list
+				cues.add( arguments[i] );
+			}
 		}; // end of addCue()
 
 
 		/**
-		 * TODO
+		 * Remove a cue to the list of cues.
+		 * Implementation of http://dev.w3.org/html5/spec/media-elements.html#dom-texttrack-removecue
+		 * @function
+		 *
+		 * @params {TrackCue} The cue to remove.
+		 *
+		 * @throws {Exception} Throw an NOT_FOUND_ERR if the cue wasn't found
 		 */
 		this.removeCue = function( cue ) {
-			return cues.del( cue );
+			// Skip bad argument
+			if (!(cue instanceof Item )) { return; }
+
+			try {
+				cues.del( cues.index( cue ) );
+			} catch (e) {
+				throw e;
+			}
 		}; // end of removeCue()
 
-	} // end of Track
+	} // end of Track constructor
 
 	Track.prototype = new Item(); // Inherit from Item
 	Track.prototype.constructor = Track; // Don't forget to correct the constructor
@@ -324,33 +382,50 @@
 
 	// Add some useful functions to the Track's prototype
 	Track.prototype = {
+		/**
+		 * Disable the track
+		 * @function
+		 */
 		disable: function() {
 			this.mode = Track.DISABLED;
-		},
+		}, // end of disable()
 
+
+		/**
+		 * Hide the track
+		 * @function
+		 */
 		hide: function() {
 			this.mode = Track.HIDDEN;
-		},
+		}, // end of hide()
 
+
+		/**
+		 * Show the track
+		 * @function
+		 */
 		show: function() {
 			this.mode = Track.SHOWING;
-		}
-	};
+		} // end of show()
+	}; // end of Track.prototype
 
 
 	/**
-	 * TODO
+	 * The TrackList class
+	 * @constructor
+	 *
+	 * @returns {TrackList} A new TrackList instance
 	 */
 	function TrackList() {
 		this.init(); // Initialize the list
 
 		// TODO
-		//onaddtrack
-		//onremovetrack
-	} // end of TrackList()
+		//this.onaddtrack
+		//this.onremovetrack
+	} // end of TrackList constructor
 
 	TrackList.item = Track; // The kind of item accepted in the list
-	TrackList.prototype = new List(); // Inherit from Renderer
+	TrackList.prototype = new List(); // Inherit from List
 	TrackList.prototype.constructor = TrackList; // Don't forget to correct the constructor
 
 	// Retrieve the static references for filters and shorthands creation (more convenient)
@@ -375,9 +450,113 @@
 	TrackList.createShorthands(["disable", "hide", "show"]);
 
 
-	function TrackCue() {}
-	function TrackCueList() {}
+	/**
+	 * The TrackCue class
+	 * @constructor
+	 *
+	 * @returns {TrackCue} A new TrackCue instance
+	 */
+	function TrackCue( startTime, endTime, text ) {
+		this.track       = null;
 
+		this.id          = "";
+		this.startTime   = startTime;
+		this.endTime     = endTime;
+		this.pauseOnExit = false;
+		this.vertical    = TrackCue.DIRECTION.HORIZONTAL;
+		this.snapToLines = true;
+		this.line        = -1;
+		this.position    = 50;
+		this.size        = 100;
+		this.align       = TrackCue.ALIGN.MIDDLE;
+		this.text        = text || "";
+
+		// TODO
+		//this.onenter;
+		//this.onexit;
+	} // end of TrackCue constructor
+
+	TrackCue.prototype = new Item(); // Inherit from Item
+	TrackCue.prototype.constructor = Track; // Don't forget to correct the constructor
+
+
+	/**
+	 * An hash of possible alignments
+	 * @static
+	 * @type {object}
+	 */
+	TrackCue.ALIGN = {
+		START:  "start",
+		MIDDLE: "middle",
+		END:    "end",
+		LEFT:   "left",
+		RIGHT:  "right"
+	};
+
+
+	/**
+	 * An hash of possible directions
+	 * @static
+	 * @type {object}
+	 */
+	TrackCue.DIRECTION = {
+		HORIZONTAL:    "",
+		VERTICALLEFT:  "rl",
+		VERTICALRIGHT: "lr"
+	};
+
+
+	/**
+	 * Return a document fragment containing the cue's text.
+	 * Still WIP since it must implement WebVTT's DOM construction (see http://dev.w3.org/html5/webvtt/#webvtt-cue-text-dom-construction-rules)
+	 * @function
+	 *
+	 * @returns {DocumentFragment}
+	 */
+	TrackCue.prototype.getCueAsHTML = function() {
+		var
+			fragment  = document.createDocumentFragment(),
+			container = document.createElement("p");
+
+		container.innerHTML = this.text;
+		fragment.appendChild( container );
+
+		return fragment;
+	}; // end of getCueAsHTML()
+
+
+	/**
+	 * The TrackCueList class
+	 * @constructor
+	 *
+	 * @returns {TrackCueList} A new TrackCueList instance
+	 */
+	function TrackCueList() {
+		this.init(); // Initialize the list
+
+		/**
+		 * Retrieve a cue by its ID
+		 * @function
+		 *
+		 * @params {string} id The ID of the cue to retrieve
+		 *
+		 * @returns {TrackCue|null} Return the TrackCue or null if it wasn't found
+		 */
+		this.getCueById = function( id ) {
+			var result = id ? this.get({ id: id }, 0) : null;
+			return result instanceof TrackCue ? result : null;
+		}; // end of getCueById()
+
+	} // end of TrackCueList constructor
+
+	TrackCueList.item = TrackCue; // The kind of item accepted in the list
+	TrackCueList.prototype = new List(); // Inherit from List
+	TrackCueList.prototype.constructor = TrackCueList; // Don't forget to correct the constructor
+
+
+	// Expose
+	player.Item = Item;
+	player.List = List;
 
 	player.Track        = Track;
 	player.TrackList    = TrackList;
