@@ -264,6 +264,7 @@
 
 	// Mimic the DOMException error codes
 	Exception.NOT_FOUND_ERR = 8;
+	Exception.SYNTAX_ERR    = 12;
 
 
 	// Expose

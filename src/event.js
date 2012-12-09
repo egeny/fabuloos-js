@@ -143,7 +143,7 @@
 	 */
 	function returnFalse() {
 		return false;
-	}
+	} // end of returnFalse()
 
 
 	/**
@@ -155,7 +155,7 @@
 	 */
 	function returnTrue() {
 		return true;
-	}
+	} // end of returnTrue()
 
 
 	// Create an "event" namespace into the player (is independant)
@@ -325,25 +325,7 @@
 		trigger: function( element, event ) {
 			event = typeof event === "string" ? player.Event( event ) : event;
 			return handle.call( element, event );
-		}, // end of trigger()
-
-
-		/**
-		 * Re-attach the events handler manager on a new element
-		 * @function
-		 */
-		attach: function( element ) {
-			//attachOrDetach(element, true);
-		}, // end of attach()
-
-
-		/**
-		 * Remove the events handler manager from on a element whose going to be killed
-		 * @function
-		 */
-		detach: function( element ) {
-			//attachOrDetach(element, false);
-		} // end of detach()
+		} // end of trigger()
 
 	}; // end of event namespace
 

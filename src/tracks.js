@@ -305,9 +305,22 @@
 	 * The Track class
 	 * @constructor
 	 *
+	 * @param {string} kind The kind of track to create
+	 * @param {string} [label=""] The label of the track
+	 * @param {string} [lang=""] The language of the track
+	 *
 	 * @returns {Track} A new Track instance
 	 */
-	function Track( kind, label, language ) {
+	function Track( kind, label, lang ) {
+		// A track must have a kind
+		if (!kind) {
+			throw new player.Exception( player.Exception.SYNTAX_ERR );
+		}
+
+		// Makes sure we have a label and a lang
+		label = label || "";
+		lang  = lang  || "";
+
 		var
 			cues       = new TrackCueList(),
 			activeCues = new TrackCueList();
@@ -315,13 +328,13 @@
 		// TODO
 		//this.oncuechange
 
-		// Define the default mode to disabled
-		this.mode = Track.DISABLED;
+		// Define the default mode to hidden
+		this.mode = Track.HIDDEN;
 
 		// Creating getters for readonly properties
 		this.kind       = function() { return kind; };
 		this.label      = function() { return label; };
-		this.lang       = function() { return language; };
+		this.lang       = function() { return lang; };
 		this.language   = this.lang; // lang() is more convenient but keep language() as it is standard
 		this.cues       = function() { return cues; };
 		this.activeCues = function() { return activeCues; };
