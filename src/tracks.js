@@ -356,6 +356,9 @@
 					cues.del( cues.index( arguments[i] ) );
 				} catch (e) {}
 
+				// Define the cue's track property to this track
+				arguments[i].track = this;
+
 				// Add the cue to the cue list
 				cues.add( arguments[i] );
 			}
@@ -396,7 +399,18 @@
 	// Add some useful functions to the Track's prototype
 	Track.prototype = {
 		/**
-		 * Disable the track
+		 * Tells if the track is active (not disabled)
+		 * @function
+		 *
+		 * @return {boolean} Return false if the track is disabled (mode to Track.DISABLED), otherwise return true
+		 */
+		active: function() {
+			return this.mode !== Track.DISABLED;
+		}, // end of active()
+
+
+		/**
+		 * Disable the track (set its mode to Track.DISABLED)
 		 * @function
 		 */
 		disable: function() {
@@ -405,7 +419,18 @@
 
 
 		/**
-		 * Hide the track
+		 * Tells if the track is disabled
+		 * @function
+		 *
+		 * @return {boolean} Return true if the track is disabled (mode to Track.DISABLED), otherwise return false
+		 */
+		disabled: function() {
+			return this.mode === Track.DISABLED;
+		}, // end of disable()
+
+
+		/**
+		 * Hide the track (set its mode to Track.HIDDEN)
 		 * @function
 		 */
 		hide: function() {
@@ -414,12 +439,34 @@
 
 
 		/**
-		 * Show the track
+		 * Tells if the track is hidden
+		 * @function
+		 *
+		 * @return {boolean} Return true if the track is hidden (mode to Track.HIDDEN), otherwise return false
+		 */
+		hidden: function() {
+			return this.mode === Track.HIDDEN;
+		}, // end of disable()
+
+
+		/**
+		 * Show the track (set its mode to Track.SHOWING)
 		 * @function
 		 */
 		show: function() {
 			this.mode = Track.SHOWING;
-		} // end of show()
+		}, // end of show()
+
+
+		/**
+		 * Tells if the track is showing
+		 * @function
+		 *
+		 * @return {boolean} Return true if the track is showing (mode to Track.SHOWING), otherwise return false
+		 */
+		showing: function() {
+			return this.mode === Track.SHOWING;
+		} // end of disable()
 	}; // end of Track.prototype
 
 
@@ -447,9 +494,10 @@
 
 	// Create the filters in the prototype
 	TrackList.createFilters({
-		showing:  { mode: Track.SHOWING },
-		hidden:   { mode: Track.HIDDEN },
-		disabled: { mode: Track.DISABLED },
+		active:   { active:   true },
+		disabled: { disabled: true },
+		hidden:   { hidden:   true },
+		showing:  { showing:  true },
 
 		subtitles:    { kind: "subtitles" },
 		captions:     { kind: "captions" },

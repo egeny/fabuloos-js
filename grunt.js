@@ -24,10 +24,14 @@ module.exports = function(grunt) {
 					'src/renderers/Renderer.js',
 					'src/renderers/HTMLMediaRenderer.js',
 					'src/renderers/FlashMediaRenderer.js',
+
 					'src/core.js',
 					'src/event.js',
-					'src/tracks.js',
 					'src/api.js',
+
+					'src/tracks.js',
+					'src/plugins/tracks.js',
+
 					'src/plugins/playlist.js',
 					'src/plugins/tracker.js',
 					'src/plugins/ads.js'
