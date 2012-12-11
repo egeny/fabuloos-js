@@ -262,10 +262,10 @@
 					handlers = [];
 
 					// Loop through the handlers cache to find the specific handler
-					for (j = 0, count = cache.handlers[type]; j < count; j++) {
+					for (j = 0, count = cache.handlers[type].length; j < count; j++) {
 						// Keep the other handlers
 						if (cache.handlers[type][j] !== handler) {
-							handlers.push( cache.handler[type][j] );
+							handlers.push( cache.handlers[type][j] );
 						}
 					}
 
