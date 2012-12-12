@@ -94,7 +94,7 @@
 				i, count, track, // Loop specific
 				j, kount, cue;
 
-			if (config.src) {
+			if (config && config.src) {
 				this.off( "timeupdate", cycle ); // Disable the cues' cycling function
 				this.tracks.del(); // Reset the tracklist when changing the source
 
