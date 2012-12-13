@@ -139,6 +139,13 @@
 			this.id      = id;
 			this.element = document.getElementById( id );
 
+			// Use a closure to prepare a handleManager to correct the "this" keyword when receiving an event from a renderer
+			this.handleManager = (function( instance ){
+				return function() {
+					return instance.trigger.apply( instance, arguments );
+				};
+			}( this ));
+
 			// An audio or video element was found, try to read its config
 			if (this.element && /audio|video/i.test( this.element.nodeName )) {
 				// Watch for defined attributes
@@ -155,13 +162,6 @@
 
 			// Finally, save the received config
 			this.config( _config );
-
-			// Use a closure to prepare a handleManager to correct the "this" keyword when receiving an event from a renderer
-			this.handleManager = (function( instance ){
-				return function() {
-					return instance.trigger.apply( instance, arguments );
-				};
-			}( this ));
 		} // end of init()
 	};
 

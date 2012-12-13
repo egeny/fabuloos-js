@@ -67,7 +67,7 @@ module.exports = function(grunt) {
 	});
 
 	// Default task.
-	grunt.registerTask('default', 'lint qunit concat min');
+	grunt.registerTask('default', 'lint concat min');
 	grunt.registerTask('concat', "Concatenate files, replace @VERSION with meta.version value", function() {
 		var
 			config   = grunt.config('concat.dist'),
