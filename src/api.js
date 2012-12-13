@@ -249,7 +249,7 @@
 
 			// Ask the renderer (if any) to bind this event type to the instance's handle manager
 			while (this._renderer && (type = types[i++])) {
-				this._renderer.bind( type, this.handleManager );
+				this._renderer.bind( type );
 			}
 
 			return this; // Chaining
@@ -277,18 +277,38 @@
 		 * </code>
 		 */
 		off: function( types, handler ) {
-			var type, i = 0; // Loop specific
+			var
+				cache = player.event.cache[ this[ player.expando ] ],
+				type, i = 0; // Loop specific
 
-			// Unregister the handler for this type
-			player.event.remove( this, types, handler );
+			// No types provided, remove all types
+			if (!types) {
+				types = "";
+
+				// If there is a cache, get all the types
+				if (cache) {
+					for (type in cache.handlers) {
+						types += type + " ";
+					}
+				}
+			}
 
 			// Allow multiple events types separated by a space
 			types = types.replace( player.rTrim, "" ).split( player.rSplit ); // Trim first to avoid bad splitting
 
-			// Ask the renderer (if any) to unbind this event type to the instance's handle manager
-			while (this._renderer && (type = types[i++])) {
-				this._renderer.unbind( type, this.handleManager );
-			}
+			// Prefer player.event.remove on each type instead of automatic mode
+			while (cache && (type = types[i++])) {
+				// Unregister the handler for this type
+				player.event.remove( this, type, handler );
+
+				// Retrieve the cache to see if we have to stop listening for this type
+				cache = player.event.cache[ this[ player.expando ] ];
+
+				// Ask the renderer to unbind if the cache doesn't exists anymore or if there is a cache but not for this type
+				if (this._renderer && (!cache || (cache && !cache.handlers[type]))) {
+					this._renderer.unbind( type );
+				}
+			} // end of while
 
 			return this; // Chaining
 		}, // end of off()
@@ -415,6 +435,9 @@
 			// Create the new renderer. HTMLMediaRenderer need the element to determine which tag to create
 			// TODO: The new HTMLMediaRenderer should reflect the source MIME type
 			this._renderer = renderer === HTMLMediaRenderer ? new renderer( this.element, config ) : new renderer( config );
+
+			// Define the internal handler manager
+			this._renderer.handler = this.handleManager;
 
 			// Replace the old renderer markup
 			this._renderer.replace( this.element );

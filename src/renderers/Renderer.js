@@ -100,9 +100,12 @@
 		instance.id = config.id;
 		instance.config = config;
 
+		// Initialize the event handler
+		instance.handler = null;
+
 		// Initialize a cache for event and property (very useful when plugin aren't ready)
 		instance.cache = {
-			events: {},
+			events:     {},
 			properties: {}
 		};
 
@@ -394,26 +397,19 @@
 
 
 		/**
-		 * Emulate the addEventListener method, used to allow plugin to listen events
+		 * Ask the element to listen for an event type. When the event will be triggered it will call this.handler.
 		 * @function
 		 *
 		 * @param {string} type The event type to listen
-		 * @param {function} handler The handler to call when this event type will be triggered
 		 */
-		bind: function( type, handler ) {
-			// Initialize the cache for this type
-			if (!this.cache.events[type]) {
-				this.cache.events[type] = [];
-			}
-
-			// If this renderer has an element and this element have a bind method (plugins)
-			if (this.element && this.element.bind) {
-				// Ask the element (plugin) to listen for this type of event
+		bind: function( type) {
+			// Ask the element to listen only when it wasn't already listening
+			if (!this.cache.events[type] && this.element && this.element.bind) {
 				this.element.bind( type );
 			}
 
-			// Save the handler in the cache
-			this.cache.events[type].push( handler );
+			// Remember we're listening for this type
+			this.cache.events[type] = true;
 		}, // end of bind()
 
 
@@ -440,13 +436,9 @@
 			// Correcting the event object in case we receive a string
 			event = typeof event === "string" ? { type: event } : event;
 
-			var
-				handlers = this.cache.events[event.type] || [], // Retrieve the handlers
-				i = 0, count = handlers.length; // Loop specific
-
-			// Loop through handlers to call them
-			for (; i < count; i++) {
-				handlers[i].call( this, event );
+			// If we have an handler we can call it!
+			if (this.handler) {
+				this.handler.call( this, event );
 			}
 		}, // end of dispatch()
 
@@ -492,12 +484,9 @@
 				cache = this.cache, // Retrieve the events and properties cache
 				type, key; // Loop specific
 
-			// Check if the bind method exists since sometime it doesn't for an unknown reason
-			if (this.element.bind) {
-				// Tell to the plugin to listen those types
-				for (type in cache.events) {
-					this.element.bind( type );
-				}
+			// Ask the plugin to listen for this types
+			for (type in cache.events) {
+				this.bind( type, cache.events[type] );
 			}
 
 			// The plugin and element are ready, set the property we wanted to set
@@ -534,43 +523,20 @@
 
 
 		/**
-		 * Emulate the removeEventListener method
+		 * Stop listening for an event type.
 		 * @function
 		 *
-		 * @param {string} type The type of event to clear
-		 * @param {function} handler The handler to remove from the handlers stack
+		 * @param {string} type The event type to clear
 		 */
-		unbind: function( type, handler ) {
-			var
-				cache = this.cache.events[type], // Retrieve the cache for this event type
-				handlers = [], // The new handlers to use
-				i = 0, count; // Loop specific
-
-			// Quit if there is no handlers registered for this type
-			if (!cache) {
-				return;
+		unbind: function( type ) {
+			// An handler was already set and we have an element
+			if (this.cache.events[type] && this.element && this.element.unbind) {
+				// Tell to the plugin to stop listening for this type
+				this.element.unbind( type );
 			}
 
-			// Loop through handlers
-			for (count = cache.length; handler && i < count; i++) {
-				if (cache[i] !== handler) {
-					// Keep only the listeners who doesn't match the one we're trying to remove
-					handlers.push( cache[i] );
-				}
-			}
-
-			// We still have some handlers to store in the cache
-			if (handlers.length) {
-				this.cache.events[type] = handlers;
-			} else {
-				if (this.element && this.element.unbind) {
-					// Tell to the plugin to stop listening for this type
-					this.element.unbind( type );
-				}
-
-				// Clean the cache for this event type
-				delete this.cache.events[type];
-			}
+			// Clean the cache for this event type
+			delete this.cache.events[type];
 		}, // end of unbind()
 
 

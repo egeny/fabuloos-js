@@ -5,10 +5,6 @@
 
 	/*global Renderer */
 
-	var
-		dontBubbles   = /blur|focus|mouseenter|mouseleave/,
-		notCancelable = /blur|focus|mouseenter|mouseleave|focusin|focusout/;
-
 	/**
 	 * HTMLMediaRenderer
 	 * @constructor
@@ -72,6 +68,13 @@
 
 		// Initialize the Renderer
 		instance = Renderer.init( this, config );
+
+		// Add a closure to correctly dispatch events (correcting the this)
+		this.handleManager = (function( instance ) {
+			return function() {
+				return instance.dispatch.apply( instance, arguments );
+			};
+		}( this ));
 
 		// We are extending an existing media element
 		if (this.element) {
@@ -169,34 +172,15 @@
 		 * For HTMLMediaRenderer we can use addEventListener
 		 * @see Renderer.prototype.bind
 		 */
-		bind: function( type, handler ) {
-			if (this.element) {
-				this.element.addEventListener( type, handler, false );
+		bind: function( type ) {
+			// Ask to the element to listen only when it wasn't listening using the internal handler manager
+			if (!this.cache.events[type] && this.element) {
+				this.element.addEventListener( type, this.handleManager, false );
 			}
+
+			// Remember we're listening for this type
+			this.cache.events[type] = true;
 		}, // end of bind()
-
-
-		/**
-		 * For HTMLMediaRenderer we can use dispatchEvent
-		 * @see Renderer.prototype.dispatch
-		 */
-		dispatch: function( event ) {
-			if (this.element) {
-				var
-					type       = typeof event === "string" ? event : event.type, // Determine the event type
-					bubble     = !dontBubbles.test( type ), // Check if this type bubbles
-					cancelable = !notCancelable.test( type ); // Check if this type is cancelable
-
-				// Create a dummy event, creating using the real interface is a nightmare
-				event = document.createEvent( "Event" );
-
-				// Initialize the event
-				event.initEvent( type, bubble, cancelable );
-
-				// Dispatch!
-				this.element.dispatchEvent( event );
-			}
-		}, // end of dispatch()
 
 
 		/**
@@ -273,10 +257,14 @@
 		 * For HTMLMediaRenderer we can use removeEventListener
 		 * @see Renderer.prototype.unbind
 		 */
-		unbind: function( type, handler ) {
-			if (this.element) {
-				this.element.removeEventListener( type, handler, false );
+		unbind: function( type ) {
+			// An handler was already set and we have an element
+			if (this.cache.events[type] && this.element) {
+				// Stop listening for this event using the internal handler manager
+				this.element.removeEventListener( type, this.handleManager, false );
 			}
+
+			delete this.cache.events[type];
 		} // end of unbind()
 
 	}); // end of Renderer.extend()
