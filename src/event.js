@@ -256,6 +256,11 @@
 
 			// Loop through event types
 			while ((type = types[i++])) {
+				// Don't bother if there is no handlers for this type
+				if (!cache.handlers[type]) {
+					continue;
+				}
+
 				// Asking to remove a specific handler
 				if (handler) {
 					// Prepare a new handlers cache
