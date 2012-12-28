@@ -90,6 +90,14 @@
 	}());
 
 
+	/**
+	 * Will this renderer be supported on this browser?
+	 * @static
+	 * @type {function}
+	 */
+	FlashRenderer.isSupported = Renderer.isPluginSupported( FlashRenderer.plugin );
+
+
 	// Extend the FlashRenderer prototype
 	Renderer.extend(FlashRenderer.prototype, {
 

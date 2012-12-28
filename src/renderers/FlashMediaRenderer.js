@@ -89,7 +89,7 @@
 	 * @static
 	 * @type {function}
 	 */
-	FlashMediaRenderer.isSupported = Renderer.isPluginSupported( FlashRenderer.plugin );
+	FlashMediaRenderer.isSupported = FlashRenderer.isSupported;
 
 
 	// Extend the FlashMediaRenderer prototype
