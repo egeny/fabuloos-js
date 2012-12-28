@@ -66,39 +66,31 @@
 	 * @static @function
 	 *
 	 * @param {object} instance The instance to extend
-	 * @param {object} config The renderer config
-	 *
-	 * @returns {object} The initialized instance
 	 */
-	Renderer.init = function( instance, config ) {
+	Renderer.init = function( instance ) {
 		var
-			klass = instance.constructor, // Retrieve the child class constructor
-			instances = Renderer.instances[klass.name]; // Retrieve the class' instances caches
-
-		// Handle undefined config
-		config = config || {};
+			klass     = instance.constructor, // Retrieve the child class constructor
+			instances = Renderer.instances[klass.name]; // Retrieve the class' instances cache
 
 		// Initialize the instances cache if it doesn't exists
 		if (!instances) {
-			instances = { length: 0 }; // Use a fake array
-			klass.instances = instances; // Save a static reference to the cache in the class
-			Renderer.instances[klass.name] = instances; // Save the instances cache to Renderer
+			// Save a fake array as static reference in the class and instance cache
+			Renderer.instances[klass.name] = klass.instances = instances = { length: 0 };
 		}
+
+		// Handle undefined config
+		instance.config = instance.config || {};
 
 		// Makes sure we have an id
-		config.id = config.id || klass.name + "-" + (instances.length + 1);
+		instance.config.id = instance.config.id || klass.name + "-" + (instances.length + 1);
 
 		// Store the new instance or retrieve from cache
-		if (!instances[config.id]) {
-			instances[config.id] = instance;
+		if (!instances[instance.config.id]) {
+			instances[instance.config.id] = instance;
 			instances.length++;
 		} else {
-			return instances[config.id];
+			return instances[instance.config.id];
 		}
-
-		// Store the id and config in the instance
-		instance.id = config.id;
-		instance.config = config;
 
 		// Initialize the event handler
 		instance.handler = null;
@@ -152,7 +144,7 @@
 			// Return the result
 			return canPlayType;
 		}
-	};
+	}; // end of Renderer.canPlay()
 
 
 	/**
@@ -165,7 +157,7 @@
 	 */
 	Renderer.canPlayType = function( type ) {
 		return this.types[type] || "";
-	};
+	}; // end of Renderer.canPlayType()
 
 
 	/**
@@ -352,35 +344,29 @@
 
 
 	/**
-	 * Utility function to merge two config objects
+	 * Utility function to merge objects
 	 * @static @function
 	 *
-	 * @param {object} first The first object config
-	 * @param {object} second The second object config
+	 * @param {object} ... The objects to merge
 	 *
-	 * @returns {object} Returns a new object (don't overwrite the first to keep params clear)
+	 * @returns {object} Returns a new object (don't overwrite the properties if exists)
 	 */
-	Renderer.merge = function( first, second ) {
-		var output = {}, key;
+	Renderer.merge = function() {
+		var
+			output = {}, // Prepare the output
+			i = 0, count = arguments.length, key; // Loop specific
 
-		// Handle undefined first
-		first = first || {};
-
-		// Simply copy the first (don't modify the reference)
-		for (key in first) {
-			output[key] = first[key];
-		}
-
-		// Merge with the second
-		for (key in second) {
-			// Merge recursively the objects
-			if (typeof second[key] === "object") {
-				output[key] = Renderer.merge( first[key], second[key] );
-			}
-
-			// The key doesn't exists: merge!
-			if (!output[key]) {
-				output[key] = second[key];
+		// Loop through each arguments
+		for (; i < count; i++) {
+			// Loop through each arguments' properties
+			for (key in arguments[i]) {
+				// Add the value if the key doesn't exists
+				if (!output.hasOwnProperty( key )) {
+					output[key] = arguments[i][key];
+				} else if (typeof output[key] === "object") {
+					// If the key exists, check if we have to call recursively
+					output[key] = Renderer.merge( output[key], arguments[i][key] );
+				}
 			}
 		}
 
@@ -419,8 +405,8 @@
 		 */
 		destroy: function() {
 			var cache = Renderer.instances[this.constructor.name];
-			if (cache[this.id]) {
-				delete cache[this.id];
+			if (cache[this.config.id]) {
+				delete cache[this.config.id];
 				cache.length--;
 			}
 		}, // end of destroy()

@@ -23,6 +23,7 @@ module.exports = function(grunt) {
 				src: [
 					'src/renderers/Renderer.js',
 					'src/renderers/HTMLMediaRenderer.js',
+					'src/renderers/FlashRenderer.js',
 					'src/renderers/FlashMediaRenderer.js',
 
 					'src/core.js',
