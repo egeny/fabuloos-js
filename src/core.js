@@ -9,7 +9,7 @@
 	// Use JavaScript script mode
 	"use strict";
 
-	/*global HTMLMediaRenderer, FlashMediaRenderer */
+	/*global HTMLMediaRenderer, FlashMediaRenderer, YoutubeMediaRenderer */
 
 	var
 		/**
@@ -79,7 +79,7 @@
 		 * @type object
 		 */
 		_config: {
-			renderers: [HTMLMediaRenderer, FlashMediaRenderer]
+			renderers: [HTMLMediaRenderer, FlashMediaRenderer, YoutubeMediaRenderer]
 		},
 
 		/**

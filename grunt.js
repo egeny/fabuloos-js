@@ -25,6 +25,7 @@ module.exports = function(grunt) {
 					'src/renderers/HTMLMediaRenderer.js',
 					'src/renderers/FlashRenderer.js',
 					'src/renderers/FlashMediaRenderer.js',
+					'src/renderers/YoutubeMediaRenderer.js',
 
 					'src/core.js',
 					'src/event.js',
