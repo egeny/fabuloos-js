@@ -116,7 +116,7 @@
 	Renderer.canPlay = function( url ) {
 		var
 			rExt = url.match( /\.([\w\d]+)(?=\/|\?|#|$)/g ), // Find the extension (.mp3, .avi)
-			ext  = rExt[rExt.length - 1].substring( 1 ), // Get the last extension
+			ext  = rExt ? rExt[rExt.length - 1].substring( 1 ) : "", // Get the last extension
 			mime = Renderer.guessType( ext ), // Try to guess the MIME type
 			i = 0, count, canPlayType, result;
 
@@ -455,7 +455,7 @@
 			}
 
 			return this.element ? ((typeof this.element.get === "function") ? this.element.get( property ) : this.element[property]) : undefined;
-		}, // end of getProperty()
+		}, // end of get()
 
 
 		/**
@@ -505,7 +505,7 @@
 				// If the element doesn't exists (not ready or not in the DOM), store properties and values in a cache
 				this.cache.properties[property] = value;
 			}
-		}, // end of setProperty()
+		}, // end of set()
 
 
 		/**
