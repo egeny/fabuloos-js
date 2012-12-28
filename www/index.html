@@ -7,7 +7,7 @@
 	<script src="../src/renderers/HTMLMediaRenderer.js"></script>
 	<script src="../src/renderers/FlashRenderer.js"></script>
 	<script src="../src/renderers/FlashMediaRenderer.js"></script>
-	<!--<script src="../src/renderers/YoutubeMediaRenderer.js"></script>-->
+	<script src="../src/renderers/YoutubeMediaRenderer.js"></script>
 
 	<script src="../src/core.js"></script>
 	<script src="../src/event.js"></script>
@@ -24,7 +24,12 @@
 <body>
 	<video id="media" width="720" height="405" src="http://ad2play/ressources/demoreel-2009.mp4" x-webkit-airplay="allow" controls></video>
 	<script>
-		var player = fabuloos("media");
+		var player = fabuloos(
+			"media",
+			{
+				src: "http://www.youtube.com/watch?v=50HsOJuvaKY"
+			}
+		);
 	</script>
 </body>
 </html>
