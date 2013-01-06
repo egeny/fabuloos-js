@@ -9,25 +9,25 @@
 		 * A RegExp used to check if a string is a timestamp
 		 * @type {RegExp}
 		 */
-		rTimestamp = /(\d+(?:\.\d+)?)(?=[:hms]|$)/,
+		rTimestamp = /(\d+(?:[\.|,]\d+)?)(?=[:hms]|$)/,
 
 		/**
 		 * A RegExp used to retrieve the number of seconds in a timestamp string
 		 * @type {RegExp}
 		 */
-		rSeconds = /(\d+)s|(\d+(?:\.\d+)?)$/,
+		rSeconds = /(\d+(?:[\.|,]\d+)?)s?$/,
 
 		/**
 		 * A RegExp used to retrieve the number of minutes in a timestamp string
 		 * @type {RegExp}
 		 */
-		rMinutes = /(\d+)m|(?:\d+:)?(\d+)(?=:)/,
+		rMinutes = /(?:\d+:)?(\d+)(?=:|m)/,
 
 		/**
 		 * A RegExp used to retrieve the number of hours in a timestamp string
 		 * @type {RegExp}
 		 */
-		rHours = /(\d+)h|^(\d+)(?::\d+){2}/;
+		rHours = /^(\d+)(?:(?::\d+){2}|h)/;
 
 
 	// Extend the player with new methods
@@ -120,9 +120,9 @@
 			m = timestamp.match( rMinutes ),
 			h = timestamp.match( rHours );
 
-		s = s ? parseFloat( s[1] || s[2] || 0 )   : 0;
-		m = m ? parseInt( m[1] || m[2] || 0, 10 ) : 0;
-		h = h ? parseInt( h[1] || h[2] || 0, 10 ) : 0;
+		s = s ? parseFloat( s[1].replace( ",", "." ) ) : 0;
+		m = m ? parseInt( m[1], 10 ) : 0;
+		h = h ? parseInt( h[1], 10 ) : 0;
 
 		return (h * 3600) + (m * 60) + s;
 	}; // end of toSeconds()
