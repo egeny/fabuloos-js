@@ -250,6 +250,9 @@
 	 * @returns {array|string|false} Returns a string or an array of MIME type. False if the extension is unknown
 	 */
 	Renderer.guessType = function() {
+		// Exit if we don't have an extension to test
+		if (!arguments[0]) { return false; }
+
 		var
 			rExt = new RegExp( arguments[0], "i" ), // A RegExp based on the extension
 			rReplace = /([^,]+)/g, // A RegExp used to append type on multiple MIME
