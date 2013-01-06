@@ -239,17 +239,29 @@
 		 * </code>
 		 */
 		on: function( types, handler, data ) {
-			var type, i = 0; // Loop specific
+			var type, i = 0;
 
-			// Register the handler for this type
-			player.event.add( this, types, handler, data );
+			// Allow calling using an object litteral
+			if (typeof types !== "string") {
+				for (type in types) {
+					this.on( type, types[type] );
+				}
+
+				return this; // Chaining
+			}
 
 			// Allow multiple events types separated by a space
 			types = types.replace( player.rTrim, "" ).split( player.rSplit ); // Trim first to avoid bad splitting
 
-			// Ask the renderer (if any) to bind this event type to the instance's handle manager
-			while (this._renderer && (type = types[i++])) {
-				this._renderer.bind( type );
+			// Loop through each types
+			while ((type = types[i++])) {
+				// Register the handler for this type
+				player.event.add( this, type, handler, data );
+
+				// Ask the renderer (if any) to bind this event type to the instance's handle manager
+				if (this._renderer) {
+					this._renderer.bind( type );
+				}
 			}
 
 			return this; // Chaining
@@ -482,6 +494,12 @@
 
 			// Some properties have to be handled specifically
 			switch (property) {
+				// Allow defining directly some event handlers
+				// TODO: allow more methods
+				case "on":
+					return this.on( value );
+
+				// TODO: create a "renderers" method
 				case "renderers":
 					// Makes sure we receive an array
 					value = (value.push) ? value : [value];
