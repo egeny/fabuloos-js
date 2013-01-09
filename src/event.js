@@ -339,8 +339,6 @@
 	player.bind    = player.event.add;
 	player.unbind  = player.event.remove;
 	player.trigger = player.event.trigger;
-	player.attach  = player.event.attach;
-	player.detach  = player.event.detach;
 
 
 	// Abstract an event with a custom Event class.
