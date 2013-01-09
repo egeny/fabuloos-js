@@ -503,8 +503,7 @@
 		captions:     { kind: "captions" },
 		descriptions: { kind: "descriptions" },
 		chapters:     { kind: "chapters" },
-		metadata:     { kind: "metadata" },
-		functions:    { kind: "functions" }
+		metadata:     { kind: "metadata" }
 	});
 
 	// Create the shorthands in the prototype
