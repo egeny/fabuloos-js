@@ -1,1 +1,5 @@
+# Ignoring the build folder
+build/
+
+# OSX Files
 .DS_Store
