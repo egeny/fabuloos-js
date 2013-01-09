@@ -6,17 +6,17 @@
 	/*global Renderer, FlashRenderer */
 
 	/**
-	 * YoutubeMediaRenderer
+	 * YoutubeFlashRenderer
 	 * @constructor
 	 *
 	 * @param {object} config The renderer config
 	 *
-	 * @returns {YoutubeMediaRenderer} A new YoutubeMediaRenderer instance
+	 * @returns {YoutubeFlashRenderer} A new YoutubeFlashRenderer instance
 	 */
-	function YoutubeMediaRenderer( config ) {
+	function YoutubeFlashRenderer( config ) {
 		var instance = this;
 
-		instance.config = Renderer.merge( config, YoutubeMediaRenderer.config ); // Merge the config with defaults
+		instance.config = Renderer.merge( config, YoutubeFlashRenderer.config ); // Merge the config with defaults
 		instance        = FlashRenderer.init( instance );
 
 		// Append the "playerapiid" to the URL to correctly dispatch events
@@ -30,17 +30,17 @@
 		};
 
 		return instance;
-	} // end of YoutubeMediaRenderer constructor
+	} // end of YoutubeFlashRenderer constructor
 
 
 	// Set the constructor name if it doesn't exists (IE)
 	// Beware to only set it if undefined, this property is read-only in strict mode
-	if (!YoutubeMediaRenderer.name) {
-		YoutubeMediaRenderer.name = "YoutubeMediaRenderer";
+	if (!YoutubeFlashRenderer.name) {
+		YoutubeFlashRenderer.name = "YoutubeFlashRenderer";
 	}
 
-	YoutubeMediaRenderer.prototype = new FlashRenderer(); // Inherit from FlashRenderer
-	YoutubeMediaRenderer.prototype.constructor = YoutubeMediaRenderer; // Don't forget to correct the constructor
+	YoutubeFlashRenderer.prototype = new FlashRenderer(); // Inherit from FlashRenderer
+	YoutubeFlashRenderer.prototype.constructor = YoutubeFlashRenderer; // Don't forget to correct the constructor
 
 
 	/**
@@ -48,7 +48,7 @@
 	 * @static
 	 * @type {object}
 	 */
-	YoutubeMediaRenderer.config = {
+	YoutubeFlashRenderer.config = {
 		data: "http://www.youtube.com/apiplayer?enablejsapi=1&version=3"
 	};
 
@@ -58,7 +58,7 @@
 	 * @static
 	 * @type {Number}
 	 */
-	YoutubeMediaRenderer.timeupdateDelay = 250;
+	YoutubeFlashRenderer.timeupdateDelay = 250;
 
 
 	/**
@@ -66,7 +66,7 @@
 	 * @static
 	 * @type {RegExp}
 	 */
-	YoutubeMediaRenderer.RegExp = /youtu\.?be(?:\.com)?[\/|:](?:.+)?([\w\d]{11})/;
+	YoutubeFlashRenderer.RegExp = /youtu\.?be(?:\.com)?[\/|:](?:.+)?([\w\d]{11})/;
 
 
 	/**
@@ -77,17 +77,17 @@
 	 *
 	 * @returns {string} Returns "probably" if the URL seems to be a Youtube valid URL, otherwise return an empty string
 	 */
-	YoutubeMediaRenderer.canPlay = function( url ) {
-		return YoutubeMediaRenderer.RegExp.test( url ) ? "probably" : "";
+	YoutubeFlashRenderer.canPlay = function( url ) {
+		return YoutubeFlashRenderer.RegExp.test( url ) ? "probably" : "";
 	};
 
 
 	/**
-	 * The YoutubeMediaRenderer can only play Youtube's video so this method will always return an empty string
+	 * The YoutubeFlashRenderer can only play Youtube's video so this method will always return an empty string
 	 * @static
 	 * @type {function}
 	 */
-	YoutubeMediaRenderer.canPlayType = function() {
+	YoutubeFlashRenderer.canPlayType = function() {
 		return "";
 	};
 
@@ -98,7 +98,7 @@
 	 * @static
 	 * @type {object}
 	 */
-	YoutubeMediaRenderer.handlers = { length: 0 };
+	YoutubeFlashRenderer.handlers = { length: 0 };
 
 
 	/**
@@ -106,11 +106,11 @@
 	 * @static
 	 * @type {function}
 	 */
-	YoutubeMediaRenderer.isSupported = FlashRenderer.isSupported;
+	YoutubeFlashRenderer.isSupported = FlashRenderer.isSupported;
 
 
-	// Extend the YoutubeMediaRenderer prototype
-	Renderer.extend(YoutubeMediaRenderer.prototype, {
+	// Extend the YoutubeFlashRenderer prototype
+	Renderer.extend(YoutubeFlashRenderer.prototype, {
 
 		/**
 		 * Get a property's value
@@ -192,7 +192,7 @@
 					this.dispatch( "playing" );
 
 					// Set a timer to dispatch the "timeupdate" event
-					this.timer = window.setInterval( this.timeupdate, YoutubeMediaRenderer.timeupdateDelay );
+					this.timer = window.setInterval( this.timeupdate, YoutubeFlashRenderer.timeupdateDelay );
 				break;
 
 				case 2: // Paused
@@ -206,7 +206,7 @@
 				case 3: // Buffering
 				break;
 			}
-		}, // end of internalHandler()
+		}, // end of handleStateChange()
 
 
 		/**
@@ -242,7 +242,7 @@
 					this.element[property] = value;
 
 					// Get the video ID
-					var id = value.match( YoutubeMediaRenderer.RegExp );
+					var id = value.match( YoutubeFlashRenderer.RegExp );
 
 					// Set the source using the video ID (if found)
 					if (id) {
@@ -274,30 +274,30 @@
 	scope.onYouTubePlayerReady = function( id ) {
 		var
 			// Retrieve the instance
-			instance = YoutubeMediaRenderer.instances[id],
+			instance = YoutubeFlashRenderer.instances[id],
 
 			// Create an identifier for the internal handler
-			handler = "handler_" + (YoutubeMediaRenderer.handlers.length + 1);
+			handler = "handler_" + (YoutubeFlashRenderer.handlers.length + 1);
 
 		// Abort if we couldn't find the instance
 		if (!instance) { return; }
 
 		/**
 		 * Since Youtube's addEventListener method call on window.something
-		 * We have to retrieve the right YoutubeMediaRenderer instance.
-		 * Using YoutubeMediaRenderer.instances["id"] doesn't work
+		 * We have to retrieve the right YoutubeFlashRenderer instance.
+		 * Using YoutubeFlashRenderer.instances["id"] doesn't work
 		 * (the Youtube player cannot call on an array)
 		 * We have to create a closure calling the right instance.
 		 * This closure will be store in a fake array and will be called
-		 * Using YoutubeMediaRenderer.handlers.handler_X (where X is unique).
+		 * Using YoutubeFlashRenderer.handlers.handler_X (where X is unique).
 		 */
-		YoutubeMediaRenderer.handlers.length++;
-		YoutubeMediaRenderer.handlers[handler] = function() {
+		YoutubeFlashRenderer.handlers.length++;
+		YoutubeFlashRenderer.handlers[handler] = function() {
 			instance.handleStateChange.apply( instance, arguments );
 		};
 
 		// Register the event on the player
-		instance.element.addEventListener( "onStateChange", "YoutubeMediaRenderer.handlers." + handler );
+		instance.element.addEventListener( "onStateChange", "YoutubeFlashRenderer.handlers." + handler );
 
 		// Call the regular's Renderer ready method
 		instance.ready();
@@ -305,6 +305,6 @@
 
 
 	// Expose
-	scope.YoutubeMediaRenderer = YoutubeMediaRenderer;
+	scope.YoutubeFlashRenderer = YoutubeFlashRenderer;
 
 }( window ));
