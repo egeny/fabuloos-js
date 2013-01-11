@@ -91,6 +91,11 @@
 	 */
 	FlashMediaRenderer.isSupported = FlashRenderer.isSupported;
 
+	// If supported, append this renderer to the supported renderers stack
+	if (FlashMediaRenderer.isSupported) {
+		Renderer.supported.push( FlashMediaRenderer );
+	}
+
 
 	// Extend the FlashMediaRenderer prototype
 	Renderer.extend(FlashMediaRenderer.prototype, {

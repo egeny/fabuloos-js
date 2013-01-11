@@ -8,7 +8,7 @@ module.exports = function(grunt) {
 	grunt.initConfig({
 		meta: {
 			name: "fabuloos",
-			version: "1.0"
+			version: "1.0.0-beta"
 		},
 
 		// Lint task

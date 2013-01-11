@@ -470,6 +470,35 @@
 
 
 		/**
+		 * TODO
+		 */
+		renderers: function( renderers ) {
+			// Act as a getter if there is no arguments
+			if (!arguments.length) {
+				return this._config.renderers || [];
+			}
+
+			// Makes sure we receive an array
+			renderers = (renderers.push) ? renderers : [renderers];
+
+			var
+				supported = [], // List of supported renderers
+				i = 0, count = renderers.length; // Loop specific
+
+			// Loop through each renderers to test them
+			for (; i < count; i++) {
+				if (renderers[i].isSupported) {
+					// This renderer is supported, add it to the stack
+					supported.push( renderers[i] );
+				}
+			}
+
+			// Save the supported renderers list in the config
+			this._config.renderers = supported;
+		}, // end of renderers()
+
+
+		/**
 		 * Set a player's property.
 		 * @function
 		 *
@@ -501,19 +530,7 @@
 
 				// TODO: create a "renderers" method
 				case "renderers":
-					// Makes sure we receive an array
-					value = (value.push) ? value : [value];
-
-					// Loop through each renderers to test them
-					for (i = 0, count = value.length; i < count; i++) {
-						if (value[i].isSupported) {
-							// This renderer is supported, add it to the stack
-							renderers.push( value[i] );
-						}
-					}
-
-					// Override the value with the supported renderers
-					value = renderers;
+					this.renderers( value );
 				break;
 
 				case "src":

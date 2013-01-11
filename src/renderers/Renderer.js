@@ -62,6 +62,14 @@
 
 
 	/**
+	 * A list of currently supported renderers
+	 * @static
+	 * @type {array}
+	 */
+	Renderer.supported = [];
+
+
+	/**
 	 * Renderer initialization
 	 * @static @function
 	 *

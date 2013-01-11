@@ -132,6 +132,11 @@
 	 */
 	HTMLMediaRenderer.isSupported = HTMLMediaRenderer.isAudioSupported && HTMLMediaRenderer.isVideoSupported;
 
+	// If supported, append this renderer to the supported renderers stack
+	if (HTMLMediaRenderer.isSupported) {
+		Renderer.supported.push( HTMLMediaRenderer );
+	}
+
 
 	/**
 	 * Static reference to Renderer.canPlayType

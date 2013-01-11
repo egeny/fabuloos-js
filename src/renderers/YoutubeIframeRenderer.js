@@ -89,6 +89,11 @@
 	 */
 	YoutubeIframeRenderer.isSupported = !!window.postMessage;
 
+	// If supported, append this renderer to the supported renderers stack
+	if (YoutubeIframeRenderer.isSupported) {
+		Renderer.supported.push( YoutubeIframeRenderer );
+	}
+
 	if (YoutubeIframeRenderer.isSupported) {
 		var tag = document.createElement( "script" );
 		tag.src = "//www.youtube.com/iframe_api";

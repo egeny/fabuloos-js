@@ -9,7 +9,7 @@
 	// Use JavaScript script mode
 	"use strict";
 
-	/*global HTMLMediaRenderer, FlashMediaRenderer, YoutubeMediaRenderer */
+	/*global Renderer */
 
 	var
 		/**
@@ -60,6 +60,8 @@
 
 	/**
 	 * The current script's version
+	 * @see http://semver.org
+	 *
 	 * @static
 	 * @type string
 	 */
@@ -78,9 +80,7 @@
 		 * The whole instance configuration
 		 * @type object
 		 */
-		_config: {
-			renderers: [HTMLMediaRenderer, FlashMediaRenderer, YoutubeMediaRenderer]
-		},
+		_config: {},
 
 		/**
 		 * The enhanced element
@@ -127,13 +127,13 @@
 			// Handle undefined config
 			config = config || {};
 
+			// Test the renderers
+			this.renderers( Renderer.supported );
+
 			// Copy the received config in the local _config
 			for (property in config) {
 				_config[property] = config[property];
 			}
-
-			// Test the renderers
-			this.config({ renderers: _config.renderers || this._config.renderers });
 
 			// Store element's related stuff
 			this.id      = id;

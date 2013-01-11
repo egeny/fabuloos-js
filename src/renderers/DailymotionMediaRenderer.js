@@ -6,17 +6,17 @@
 	/*global Renderer, FlashRenderer */
 
 	/**
-	 * YoutubeFlashRenderer
+	 * DailymotionMediaRenderer
 	 * @constructor
 	 *
 	 * @param {object} config The renderer config
 	 *
-	 * @returns {YoutubeFlashRenderer} A new YoutubeFlashRenderer instance
+	 * @returns {DailymotionMediaRenderer} A new DailymotionMediaRenderer instance
 	 */
-	function YoutubeFlashRenderer( config ) {
+	function DailymotionMediaRenderer( config ) {
 		var instance = this;
 
-		instance.config = Renderer.merge( config, YoutubeFlashRenderer.config ); // Merge the config with defaults
+		instance.config = Renderer.merge( config, DailymotionMediaRenderer.config ); // Merge the config with defaults
 		instance        = FlashRenderer.init( instance );
 
 		// Append the "playerapiid" to the URL to correctly dispatch events
@@ -30,17 +30,17 @@
 		};
 
 		return instance;
-	} // end of YoutubeFlashRenderer constructor
+	} // end of DailymotionMediaRenderer constructor
 
 
 	// Set the constructor name if it doesn't exists (IE)
 	// Beware to only set it if undefined, this property is read-only in strict mode
-	if (!YoutubeFlashRenderer.name) {
-		YoutubeFlashRenderer.name = "YoutubeFlashRenderer";
+	if (!DailymotionMediaRenderer.name) {
+		DailymotionMediaRenderer.name = "DailymotionMediaRenderer";
 	}
 
-	YoutubeFlashRenderer.prototype = new FlashRenderer(); // Inherit from FlashRenderer
-	YoutubeFlashRenderer.prototype.constructor = YoutubeFlashRenderer; // Don't forget to correct the constructor
+	DailymotionMediaRenderer.prototype = new FlashRenderer(); // Inherit from FlashRenderer
+	DailymotionMediaRenderer.prototype.constructor = DailymotionMediaRenderer; // Don't forget to correct the constructor
 
 
 	/**
@@ -48,8 +48,8 @@
 	 * @static
 	 * @type {object}
 	 */
-	YoutubeFlashRenderer.config = {
-		data: "http://www.youtube.com/apiplayer?enablejsapi=1&version=3"
+	DailymotionMediaRenderer.config = {
+		data: "http://www.dailymotion.com/swf?chromeless=1&enableApi=1"
 	};
 
 
@@ -58,7 +58,7 @@
 	 * @static
 	 * @type {Number}
 	 */
-	YoutubeFlashRenderer.timeupdateDelay = 250;
+	DailymotionMediaRenderer.timeupdateDelay = 250;
 
 
 	/**
@@ -66,7 +66,7 @@
 	 * @static
 	 * @type {RegExp}
 	 */
-	YoutubeFlashRenderer.RegExp = /youtu\.?be(?:\.com)?[\/|:](?:.+)?([\w\d]{11})/;
+	DailymotionMediaRenderer.RegExp = /dailymotion(?:.+)video\/([\w+]{6})/;
 
 
 	/**
@@ -77,17 +77,17 @@
 	 *
 	 * @returns {string} Returns "probably" if the URL seems to be a Youtube valid URL, otherwise return an empty string
 	 */
-	YoutubeFlashRenderer.canPlay = function( url ) {
-		return YoutubeFlashRenderer.RegExp.test( url ) ? "probably" : "";
+	DailymotionMediaRenderer.canPlay = function( url ) {
+		return DailymotionMediaRenderer.RegExp.test( url ) ? "probably" : "";
 	};
 
 
 	/**
-	 * The YoutubeFlashRenderer can only play Youtube's video so this method will always return an empty string
+	 * The DailymotionMediaRenderer can only play Youtube's video so this method will always return an empty string
 	 * @static
 	 * @type {function}
 	 */
-	YoutubeFlashRenderer.canPlayType = function() {
+	DailymotionMediaRenderer.canPlayType = function() {
 		return "";
 	};
 
@@ -98,7 +98,7 @@
 	 * @static
 	 * @type {object}
 	 */
-	YoutubeFlashRenderer.handlers = { length: 0 };
+	DailymotionMediaRenderer.handlers = { length: 0 };
 
 
 	/**
@@ -106,16 +106,16 @@
 	 * @static
 	 * @type {function}
 	 */
-	YoutubeFlashRenderer.isSupported = FlashRenderer.isSupported;
+	DailymotionMediaRenderer.isSupported = FlashRenderer.isSupported;
 
 	// If supported, append this renderer to the supported renderers stack
-	if (YoutubeFlashRenderer.isSupported) {
-		Renderer.supported.push( YoutubeFlashRenderer );
+	if (DailymotionMediaRenderer.isSupported) {
+		Renderer.supported.push( DailymotionMediaRenderer );
 	}
 
 
-	// Extend the YoutubeFlashRenderer prototype
-	Renderer.extend(YoutubeFlashRenderer.prototype, {
+	// Extend the DailymotionMediaRenderer prototype
+	Renderer.extend(DailymotionMediaRenderer.prototype, {
 
 		/**
 		 * Get a property's value
@@ -197,7 +197,7 @@
 					this.dispatch( "playing" );
 
 					// Set a timer to dispatch the "timeupdate" event
-					this.timer = window.setInterval( this.timeupdate, YoutubeFlashRenderer.timeupdateDelay );
+					this.timer = window.setInterval( this.timeupdate, DailymotionMediaRenderer.timeupdateDelay );
 				break;
 
 				case 2: // Paused
@@ -211,7 +211,7 @@
 				case 3: // Buffering
 				break;
 			}
-		}, // end of handleStateChange()
+		}, // end of internalHandler()
 
 
 		/**
@@ -247,7 +247,7 @@
 					this.element[property] = value;
 
 					// Get the video ID
-					var id = value.match( YoutubeFlashRenderer.RegExp );
+					var id = value.match( DailymotionMediaRenderer.RegExp );
 
 					// Set the source using the video ID (if found)
 					if (id) {
@@ -276,33 +276,33 @@
 	}); // end of Renderer.extend()
 
 
-	scope.onYouTubePlayerReady = function( id ) {
+	scope.onDailymotionPlayerReady = function( id ) {
 		var
 			// Retrieve the instance
-			instance = YoutubeFlashRenderer.instances[id],
+			instance = DailymotionMediaRenderer.instances[id],
 
 			// Create an identifier for the internal handler
-			handler = "handler_" + (YoutubeFlashRenderer.handlers.length + 1);
+			handler = "handler_" + (DailymotionMediaRenderer.handlers.length + 1);
 
 		// Abort if we couldn't find the instance
 		if (!instance) { return; }
 
 		/**
 		 * Since Youtube's addEventListener method call on window.something
-		 * We have to retrieve the right YoutubeFlashRenderer instance.
-		 * Using YoutubeFlashRenderer.instances["id"] doesn't work
+		 * We have to retrieve the right DailymotionMediaRenderer instance.
+		 * Using DailymotionMediaRenderer.instances["id"] doesn't work
 		 * (the Youtube player cannot call on an array)
 		 * We have to create a closure calling the right instance.
 		 * This closure will be store in a fake array and will be called
-		 * Using YoutubeFlashRenderer.handlers.handler_X (where X is unique).
+		 * Using DailymotionMediaRenderer.handlers.handler_X (where X is unique).
 		 */
-		YoutubeFlashRenderer.handlers.length++;
-		YoutubeFlashRenderer.handlers[handler] = function() {
+		DailymotionMediaRenderer.handlers.length++;
+		DailymotionMediaRenderer.handlers[handler] = function() {
 			instance.handleStateChange.apply( instance, arguments );
 		};
 
 		// Register the event on the player
-		instance.element.addEventListener( "onStateChange", "YoutubeFlashRenderer.handlers." + handler );
+		instance.element.addEventListener( "onStateChange", "DailymotionMediaRenderer.handlers." + handler );
 
 		// Call the regular's Renderer ready method
 		instance.ready();
@@ -310,6 +310,6 @@
 
 
 	// Expose
-	scope.YoutubeFlashRenderer = YoutubeFlashRenderer;
+	scope.DailymotionMediaRenderer = DailymotionMediaRenderer;
 
 }( window ));
