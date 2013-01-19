@@ -490,9 +490,6 @@
 			for (key in cache.properties) {
 				this.set( key, cache.properties[key] );
 			}
-
-			// We don't need this cache anymore
-			delete this.cache.properties;
 		}, // end of ready()
 
 
