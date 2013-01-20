@@ -26,8 +26,13 @@
 
 		// On iframe mode, prepend the iframe's API script to the list of script tags
 		if (YoutubeRenderer.mode === "iframe") {
-			script      = document.createElement( "script" );
-			script.src  = "//www.youtube.com/iframe_api";
+			script     = document.createElement( "script" );
+			script.src = "//www.youtube.com/iframe_api";
+			// Handle the script error
+			script.onerror = function() {
+				YoutubeRenderer.script = false;
+			};
+
 			firstScript = document.getElementsByTagName( "script" )[0];
 			firstScript.parentNode.insertBefore( script, firstScript );
 		}
@@ -327,7 +332,8 @@
 
 			// If the Youtube's script isn't ready, recall this method in 10ms
 			if (!YoutubeRenderer.script) {
-				return window.setTimeout( self, 10 );
+				// Recall only if the "script" property doesn't exists (prevent script error)
+				return YoutubeRenderer.script === undefined ? window.setTimeout( self, 10 ) : undefined;
 			}
 
 			// Create a Youtube's iframe
