@@ -8,7 +8,7 @@ module.exports = function( grunt ) {
 		meta: {
 			name:    "fabuloos",
 			version: "1.0.0-beta",
-			banner:  "/*! <%= meta.name %> v<%= meta.version %> | (c) 2011, 2013 eGeny | fabuloos.org/license */"
+			banner:  "/*! <%= meta.name %> v<%= meta.version %> | (c) 2011, 2013 eGeny, Inc. | fabuloos.org/license */"
 		},
 
 		// Lint task

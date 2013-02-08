@@ -2,7 +2,7 @@
  * fabuloos v@VERSION
  * http://fabuloos.org
  *
- * Copyright 2011, 2013 eGeny and other contributors
+ * Copyright 2011, 2013 eGeny, Inc.
  * Released under the MIT license
  * http://fabuloos.org/license
  */
