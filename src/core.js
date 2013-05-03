@@ -91,6 +91,14 @@ Fab.instances = [];
 
 
 /**
+ * A simple instance counter
+ * Used to make sure we generate an unique default ID when needed
+ * @type {number}
+ */
+Fab.UID = 0;
+
+
+/**
  * A RegExp used to detect the presence of "_super" in a function's content
  * This RegExp will be used to check if we have to create a facade for a method when inheriting
  * @type {RegExp}
@@ -166,12 +174,14 @@ Fab.extend({
 	 */
 	init: function init(config) {
 		// We're trying to initialize an existing instance, destroy it first
-		if (this._ && this._.index !== undefined) {
+		if (this._ && this._.id) {
 			this.destroy();
 		}
 
 		// Declare a private space (will reset the existing one if any)
 		this._ = {
+			uid: ++Fab.UID,
+
 			// Define the index for this instance in the instances' cache
 			index: Fab.instances.push(this) - 1,
 
@@ -208,6 +218,11 @@ Fab.extend({
 		// Remove this instance from the caches
 		Fab.instances.splice(this._.index, 1);
 
+		// Correct the indexes of the instances following the one we just removed
+		for (var i = this._.index, count = Fab.instances.length; i < count; i++) {
+			Fab.instances[i]._.index = i;
+		}
+
 		// It is more convenient to return null (end chaining)
 		return null;
 	}, // end of destroy()
@@ -233,8 +248,8 @@ Fab.extend({
 	 * @return {Element|null} Return the current element reflecting the player.
 	 */
 	element: function element(config) {
-		// Act as getter if there is no arguments
-		if (config === undefined) {
+		// Act as getter if there is no arguments and if there is an element (might be null)
+		if (config === undefined && "element" in this._) {
 			return this._.element;
 		}
 
@@ -244,9 +259,11 @@ Fab.extend({
 			id  = typeof elt === "string" ? elt.replace("#", "") : elt.id;
 
 		// If we are changing the element, restore the old one
-		this.restore();
+		if (this._.old) {
+			this.restore();
+		}
 
-		this._.id  = id || this._.id; // Set the new id or use the default setted by #restore()
+		this._.id  = id || "fabuloos-" + this._.uid; // Set the new id or use the default setted by #restore()
 		this._.old = this._.element = elt.nodeName ? elt : document.getElementById(id); // Set the current element
 
 		// An audio or video element was found, try to read its config
@@ -274,13 +291,13 @@ Fab.extend({
 	 * @return {fabuloos} Return the current instance to allow chaining.
 	 */
 	restore: function restore() {
-		// Replace the element with the old one if possible
-		if (this.element && this._.element !== this._.old) {
+		// Replace the element with the old one if necessary
+		if (this._.element && this._.old && this._.element !== this._.old) {
 			this._.element.parentNode.replaceChild(this._.old, this._.element);
 		}
 
 		// Set a default id since this instance isn't related to any element
-		this._.id  = "fabuloos-" + (Fab.instances.length + 1);
+		this._.id  = "fabuloos-" + this._.uid;
 		this._.old = this._.element = null;
 
 		return this; // Chaining
