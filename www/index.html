@@ -2,51 +2,41 @@
 <html lang="en">
 <head>
 	<meta charset="UTF-8" />
-	<title></title>
+	<title>fabuloos sandbox</title>
 
-	<script src="../src/_begin.js"></script>
-
+	<!-- Fabuloos (core) -->
 	<script src="../src/core.js"></script>
 	<script src="../src/event.js"></script>
 	<script src="../src/api.js"></script>
 	<script src="../src/tracks.js"></script>
 
+	<!-- Fabuloos (renderers) -->
 	<script src="../src/renderers/Renderer.js"></script>
 	<script src="../src/renderers/FlashRenderer.js"></script>
-	<script src="../src/renderers/HTMLMediaRenderer.js"></script>
-	<script src="../src/renderers/FlashMediaRenderer.js"></script>
+	<script src="../src/renderers/HTMLRenderer.js"></script>
+	<script src="../src/renderers/FabuloosRenderer.js"></script>
 	<script src="../src/renderers/YoutubeRenderer.js"></script>
+	<script src="../src/renderers/DailymotionRenderer.js"></script>
 
-	<script src="../src/plugins/timed.js"></script>
+	<!-- Fabuloos (plugins) -->
 	<script src="../src/plugins/tracks.js"></script>
-
-	<script src="../src/plugins/_end.js"></script>
+	<script src="../src/plugins/timed.js"></script>
+	<script src="../src/plugins/playlist.js"></script>
+	<script src="../src/plugins/ads.js"></script>
+	<script src="../src/plugins/tracker.js"></script>
 </head>
 
 <body>
-	<video id="media" width="720" height="405" src="http://ad2play/ressources/demoreel-2009.mp4" x-webkit-airplay="allow" controls></video>
-	<button id="btn">Button</button>
+	<video id="media" width="720" height="405" src="http://ad2play/ressources/demoreel-2009.mp4" controls></video>
 	<script>
 		var
-			config = {
-				//src: "youtube:50HsOJuvaKY"
+			player = fabuloos({
+				element: "media",
+
 				src: "http://ad2play/ressources/demoreel-2009.mp4"
-			},
-			player = fabuloos( "media", config );
-
-		player.at(1, function() {
-			console.log("1s !");
-		});
-
-		player.at(5, function() {
-			console.log("5s !");
-		}, true);
-
-		player.at("1%", function() {
-			console.log("1% !");
-		});
-
-		fab.bind( document.getElementById("btn"), "click", player.closure("togglePlay") );
+				//src: "youtube:50HsOJuvaKY"
+				//src: "dailymotion:xxx1bj"
+			});
 	</script>
 </body>
 </html>
