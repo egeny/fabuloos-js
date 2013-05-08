@@ -1,7 +1,5 @@
+/*jshint newcap: false */
 /*global Renderer */
-
-// Expose
-window.fabuloos = window.fab = fab;
 
 /**
  * The fabuloos function
@@ -336,6 +334,8 @@ fab.extend({
 	} // end of restore()
 }); // end of fab.extend()
 
+// Expose
+window.fabuloos = window.fab = fab;
 
 /**
  * Exception class
