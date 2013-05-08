@@ -581,7 +581,7 @@ fab.extend({
 	 */
 	src: function( value ) {
 		// Check if we have a new source
-		if (!value || (typeof value !== "string" && !value.src)) {
+		if (value === undefined || (typeof value !== "string" && !value.src)) {
 			// Don't seems, it's a getter
 			return this.get( "src" );
 		}
@@ -752,7 +752,24 @@ fab.extend({
 		viewport.left   = Math.floor( horizontal );
 
 		return viewport;
-	} // end of viewport()
+	}, // end of viewport()
+
+
+	/**
+	 * TODO
+	 */
+	volume: function( value ) {
+		if (value === undefined) {
+			return this.get( "volume" );
+		}
+
+		var volume = typeof value === "string" ? this.get( "volume" ) + parseFloat( value ) : value;
+
+		volume = volume < 0 ? 0 : volume;
+		volume = volume > 1 ? 1 : volume;
+		this.set( "volume", value );
+
+	} // end of volume()
 
 }); // end of fab.extend()
 
