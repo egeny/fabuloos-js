@@ -2,7 +2,6 @@
 
 // Expose
 window.fabuloos = window.fab = fab;
-window.Fabuloos = window.Fab = Fab;
 
 /**
  * The fabuloos function
@@ -23,6 +22,12 @@ window.Fabuloos = window.Fab = Fab;
  * @return {fabuloos} Return a new fabuloos instance.
  */
 function fab(config) {
+	// Check if we're trying to create an instance of fab
+	if (this instanceof fab) {
+		// Then, initialize it
+		return this.init(config);
+	}
+
 	var
 		// First, find the element (might be { element: "div" } or "div")
 		element = config ? config.element || config : {},
@@ -36,69 +41,18 @@ function fab(config) {
 		i = 0, instance;
 
 	// Search for an instance in the cache having this id
-	while (id && (instance = Fab.instances[i++])) {
+	while (id && (instance = fab.instances[i++])) {
 		if (instance._.id === id) {
 			return instance;
 		}
 	}
 
 	// No instance found, create a new one
-	return new Fab(config);
+	return new fab(config);
 } // end of fab()
 
 
-/**
- * An unique identifier for this class.
- * Used to link a DOM element to a JS object.
- * @api dev
- * TODO: XXX/MOVE
- */
-fab.expando = "fabuloos" + (+new Date());
-
-
-/**
- * A collection of regexp used to split and trim
- * @static
- * @type RegExp
- * TODO: XXX/MOVE
- */
-fab.rSplit = /\s+/;
-fab.rTrim  = /^\s+|\s+$/g;
-
-
-/**
- * The current script's version (http://semver.org)
- * @type {string}
- * TODO: Fab should have access too
- */
-fab.version = "@VERSION";
-
-
-/**
- * The base Fabuloos class
- * @see #fab() for signatures
- */
-function Fab(config) {
-	this.init(config);
-} // end of Fab()
-
-
-/**
- * A cache for all fabuloos' instances
- * @api dev
- */
-Fab.instances = [];
-
-
-/**
- * A simple instance counter
- * Used to make sure we generate an unique default ID when needed
- * @type {number}
- */
-Fab.UID = 0;
-
-
-/**
+/*!
  * A RegExp used to detect the presence of "_super" in a function's content
  * This RegExp will be used to check if we have to create a facade for a method when inheriting
  * @type {RegExp}
@@ -106,7 +60,7 @@ Fab.UID = 0;
 var rSuper = /xyz/.test(function() { "xyz"; }) ? /\b_super\b/ : /.*/;
 
 
-/**
+/*!
  * Create a facade function to simulate inheritance
  * This closure will create this._super and call the wanted method.
  *
@@ -132,38 +86,114 @@ function createFacade(fn, _super) {
 
 
 /**
- * Extend the Fabuloos' prototype with a given object literal.
+ * Extend some objects or the fabuloos' prototype
  * It will simulate inheritance by giving access to this._super.
+ * Be careful when passing more than two arguments since this method
+ * add some properties from the last argument, to the first : obj1 <- obj2 <- obj3.
  * @api dev
  *
  * @param {object} obj The object literal to merge to the prototype
  * @return {undefined} Return nothing.
  *
+ * @param {object} ... The objects literal to merge together
+ * @return {undefined} Return nothing.
+ *
  * @example
- *   Fab.extend({
+ *   // Extend the fabuloos' prototype (adding the play method if it doesn't exists)
+ *   fab.extend({
  *     play: function() { console.log("First play"); }
  *   });
  *
- *   Fab.extend({
+ *   // Still extending the fabuloos' prototype (replacing the play method with this one)
+ *   fab.extend({
  *     play: function() {
  *       console.log("Second play");
  *       this._super();
  *     }
  *   });
  *
- *   (new Fab()).play(); // "Second play" then "First play" 
+ *   fab().play(); // "Second play" then "First play"
+ *
+ *   // Extending the fabuloos "class"
+ *   fab.extend(fab, {
+ *     clear: function() {
+ *       console.log("Clear");
+ *     }
+ *   });
+ *
+ *   fab.clear(); // "Clear"
  */
-Fab.extend = function extend(obj) {
-	// Loop through each property to extend
-	for (var prop in obj) {
-		// Override the prototype's value with the new value or a facade function if necessary
-		Fab.prototype[prop] = (typeof obj[prop] === "function" && rSuper.test(obj[prop])) ? createFacade(obj[prop], Fab.prototype[prop]) : obj[prop];
+fab.extend = function extend(obj) {
+	var
+		args = Array.prototype.slice.call(arguments), // Cast arguments to array
+		i, source, target, prop; // Loop specific
+
+	// If we have only one argument we want to augment the prototype
+	if (args.length === 1) {
+		args.unshift(fab.prototype);
 	}
-}; // end of Fab.extend()
+
+	// Loop through arguments from the end
+	for (i = args.length - 1; i > 0; i--) {
+		source = args[i]; // More convenient
+		target = args[i - 1]; // More convenient 
+
+		// Loop through each property to extend
+		for (prop in source) {
+			// Override the target's value with the new value or a facade function if necessary
+			target[prop] = (typeof source[prop] === "function" && rSuper.test(source[prop])) ? createFacade(source[prop], target[prop]) : source[prop];
+		}
+	}
+}; // end of fab.extend()
 
 
-// Extend the prototype
-Fab.extend({
+// Extend the fabuloos' "class" with static members
+fab.extend(fab, {
+	/**
+	 * A cache for all fabuloos' instances
+	 * @api dev
+	 * @type {array}
+	 */
+	instances: [],
+
+
+	/**
+	 * An unique identifier for this class.
+	 * Used to link a DOM element to a JS object.
+	 * @api dev
+	 * TODO: XXX/MOVE
+	 */
+	expando: "fabuloos" + (+new Date()),
+
+
+	/**
+	 * A collection of regexp used to split and trim
+	 * @static
+	 * @type RegExp
+	 * TODO: XXX/MOVE
+	 */
+	rSplit: /\s+/,
+	rTrim: /^\s+|\s+$/g,
+
+
+	/**
+	 * A simple instance counter
+	 * Used to make sure we generate an unique default ID when needed
+	 * @type {number}
+	 */
+	UID: 0,
+
+
+	/**
+	 * The current script's version (http://semver.org)
+	 * @type {string}
+	 */
+	version: "@VERSION"
+});
+
+
+// Extend the fabuloos' prototype
+fab.extend({
 	/**
 	 * Initialize an instance
 	 * This method exists so you can extend it and handle specific cases in your plugin.
@@ -180,10 +210,10 @@ Fab.extend({
 
 		// Declare a private space (will reset the existing one if any)
 		this._ = {
-			uid: ++Fab.UID,
+			uid: ++fab.UID,
 
 			// Define the index for this instance in the instances' cache
-			index: Fab.instances.push(this) - 1,
+			index: fab.instances.push(this) - 1,
 
 			// Define the default supported renderers (may be updated when setting the config)
 			renderers: Renderer.supported
@@ -212,15 +242,17 @@ Fab.extend({
 	 * @return {null}
 	 */
 	destroy: function destroy() {
+		var instance, i = this._.index; // Loop specific
+
 		// Restore the old element (if any)
 		this.restore();
 
 		// Remove this instance from the caches
-		Fab.instances.splice(this._.index, 1);
+		fab.instances.splice(this._.index, 1);
 
 		// Correct the indexes of the instances following the one we just removed
-		for (var i = this._.index, count = Fab.instances.length; i < count; i++) {
-			Fab.instances[i]._.index = i;
+		while ((instance = fab.instances[i])) {
+			instance._.index = i++;
 		}
 
 		// It is more convenient to return null (end chaining)
@@ -302,7 +334,7 @@ Fab.extend({
 
 		return this; // Chaining
 	} // end of restore()
-}); // end of Fab.extend()
+}); // end of fab.extend()
 
 
 /**

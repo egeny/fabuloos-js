@@ -48,7 +48,7 @@ function attachOrDetach( instance, method ) {
 
 
 // Extend the framework with new methods
-Fab.extend({
+fab.extend({
 	/**
 	 * Attach all listeners to the renderer
 	 *
@@ -815,6 +815,6 @@ Fab.extend({
 	}
 
 	// Extend the prototype with the shorthands generated
-	Fab.extend( obj );
+	fab.extend( obj );
 
 }()); // end of scope used to create getters/setters/togglers

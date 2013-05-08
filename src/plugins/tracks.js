@@ -682,7 +682,7 @@ function cycle() {
 
 
 // Extend the framework with new methods
-Fab.extend({
+fab.extend({
 	/**
 	 * TODO
 	 */

@@ -4,21 +4,17 @@ test("Correctly exposed", function() {
 	// Check for the main function
 	ok(fab,      "window.fab");
 	ok(fabuloos, "window.fabuloos");
-
-	// Check for the main class
-	ok(Fab,      "window.Fab");
-	ok(Fabuloos, "window.Fabuloos");
 });
 
 
 test("fab() and cache", function() {
-	ok(!Fab.instances.length, "The cache is empty");
+	ok(!fab.instances.length, "The cache is empty");
 
 	var player = fab("dummy");
-	equal(Fab.instances.length, 1, "A created instance is stored in the cache");
+	equal(fab.instances.length, 1, "A created instance is stored in the cache");
 
 	player = fab("dummy");
-	equal(Fab.instances.length, 1, "Asking the same instance should return from the cache");
+	equal(fab.instances.length, 1, "Asking the same instance should return from the cache");
 
 	// Destroy the player for future tests
 	player = player.destroy();
@@ -26,7 +22,7 @@ test("fab() and cache", function() {
 
 
 test("Instances ID and UID consistancy", function() {
-	Fab.UID = 0; // Makes sure we start counting at one
+	fab.UID = 0; // Makes sure we start counting at one
 
 	var
 		p1 = fab(),
@@ -65,7 +61,7 @@ test("Instances ID and UID consistancy", function() {
 
 
 test("Multiple signature for fab() (strongly related to element())", function() {
-	Fab.UID = 0; // Makes sure we start counting at one
+	fab.UID = 0; // Makes sure we start counting at one
 
 	var
 		player,
@@ -204,11 +200,11 @@ test('"Inheritance"', function() {
 	equal(player.life, undefined, "player.life doesn't exists");
 
 	// Extend by adding a property with a Number as value
-	Fab.extend({ life: 42 });
+	fab.extend({ life: 42 });
 	equal(player.life, 42, "After extending player.life exists");
 
 	// Extend the property for a method return its super (should be 42)
-	Fab.extend({
+	fab.extend({
 		life: function() {
 			return this._super;
 		}
@@ -216,7 +212,7 @@ test('"Inheritance"', function() {
 	equal(player.life(), 42, "After extending player.life should be a function returning 42 by inheritance");
 
 	// Extending another time should use the inheritance chain
-	Fab.extend({
+	fab.extend({
 		life: function(nb) {
 			return this._super() + nb;
 		}
@@ -229,8 +225,8 @@ test('"Inheritance"', function() {
 
 
 test("Init should do its stuff", function() {
-	Fab.UID = 0; // Makes sure we start counting at one
-	Fab.instances.length = 0; // Empty the instances' cache
+	fab.UID = 0; // Makes sure we start counting at one
+	fab.instances.length = 0; // Empty the instances' cache
 
 	var player = fab();
 
@@ -242,7 +238,7 @@ test("Init should do its stuff", function() {
 
 
 test("Destroying the instance", function() {
-	Fab.instances.length = 0; // Empty cache
+	fab.instances.length = 0; // Empty cache
 
 	var
 		player, player2,
@@ -259,7 +255,7 @@ test("Destroying the instance", function() {
 
 	player.destroy();
 	equal(document.getElementById(div.id), div, "Destroying should restore the previous element");
-	equal(Fab.instances.length, 0, "The cache should be empty");
+	equal(fab.instances.length, 0, "The cache should be empty");
 
 	player  = fab();
 	player2 = fab();
