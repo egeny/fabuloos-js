@@ -67,7 +67,7 @@ function getCache( element, create ) {
 			}
 		};
 
-		/**
+		/*!
 		 * Register some default listener for custom events if is IE (old event behaviour)
 		 * Beware of Opera which have both addEventListener and attachEvent
 		 */
@@ -197,7 +197,7 @@ fab.event = {
 				// No, initialize
 				cache.handlers[type] = [];
 
-				/**
+				/*!
 				 * We add only one listener for each types. We also have to use a closure (@see getCache)
 				 * to correct the "this" keywork for IE. The private handle method will launch each listener
 				 */

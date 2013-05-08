@@ -367,7 +367,7 @@ window.onYouTubePlayerReady = function( id ) {
 	// Abort if we couldn't find the instance
 	if (!instance) { return; }
 
-	/**
+	/*!
 	 * Since Youtube's addEventListener method call on window.something
 	 * We have to retrieve the right YoutubeFlashRenderer instance.
 	 * Using YoutubeFlashRenderer.instances["id"] doesn't work

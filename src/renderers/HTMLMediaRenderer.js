@@ -191,7 +191,7 @@ Renderer.extend(HTMLMediaRenderer.prototype, {
 		// Prevent fixing a fixed element
 		if (this.fixed) { return; }
 
-		/**
+		/*!
 		 * Browser sniffing is very bad, but in this case it is the only way to detect this bug
 		 * It affects only WebKit version prior to 535
 		 */

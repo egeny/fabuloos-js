@@ -21,9 +21,8 @@ var
 	togglerProperties = "autoplay controls loop muted";
 
 
-/**
+/*!
  * Attach or detach all listeners to the renderer. Used for renderer changing.
- * @private @function
  *
  * @param {fabuloos} The fabuloos instance to use for attaching/detaching
  * @param {string} The method to call on the renderer ("bind" or "unbind")
@@ -49,12 +48,12 @@ function attachOrDetach( instance, method ) {
 
 
 // Extend the framework with new methods
-fab.extend({
+Fab.extend({
 	/**
 	 * Attach all listeners to the renderer
-	 * @function
 	 *
-	 * @returns {fabuloos} Return the current instance of the player to allow chaining
+	 * @param {undefined}
+	 * @return {fabuloos} Return the current instance of the player to allow chaining
 	 */
 	attach: function() {
 		return attachOrDetach( this, "bind" );
@@ -63,13 +62,11 @@ fab.extend({
 
 	/**
 	 * Create a closure to launch a command
-	 * @function
 	 *
-	 * @params {string} cmd The command to launch.
+	 * @param {string} cmd The command to launch.
 	 *   The other arguments will be passed to the command.
 	 *   The arguments passed to the closure will be concatenate to arguments used when calling this method.
-	 *
-	 * @returns {function} Return a closure which will call the command
+	 * @return {function} Return a closure which will call the command
 	 *
 	 * @example
 	 *  <code>
@@ -93,11 +90,12 @@ fab.extend({
 
 	/**
 	 * Launch a command on the instance
-	 * @function
 	 *
-	 * @params {string} cmd The command to launch. The other arguments will be passed to the command.
+	 * @param {string} cmd The command to launch. The other arguments will be passed to the command.
+	 * @return {*} Return the result of the command or undefined if the command doesn't exists
 	 *
-	 * @returns {fabuloos|*} Return the result of the command or undefined if the command doesn't exists
+	 * @param {string} cmd The command to launch. The other arguments will be passed to the command.
+	 * @return {*} Return the result of the command or undefined if the command doesn't exists
 	 *
 	 * @example
 	 *  <code>
@@ -213,13 +211,13 @@ fab.extend({
 
 	/**
 	 * Register an handler for a given event
-	 * @function
 	 *
-	 * @param {string} type Event type(s)
+	 * @param {string} types Event type(s).
+	 *   You may provide multiple event types by separating them with a space.
 	 * @param {function} handler The function to call when the event type is fired
-	 * @param {object} data The data to pass to the handler when calling it
+	 * @param {object} data=undefined The data to pass to the handler when calling it
 	 *
-	 * @returns {fabuloos} Return the current instance of the player to allow chaining
+	 * @return {fabuloos} Return the current instance of the player to allow chaining
 	 *
 	 * @example
 	 * <code>
@@ -817,6 +815,6 @@ fab.extend({
 	}
 
 	// Extend the prototype with the shorthands generated
-	fab.extend( obj );
+	Fab.extend( obj );
 
 }()); // end of scope used to create getters/setters/togglers

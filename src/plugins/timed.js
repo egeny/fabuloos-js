@@ -32,7 +32,7 @@ var
 
 
 // Extend the framework with new methods
-fab.extend({
+Fab.extend({
 	/**
 	 * Register an handler to be triggered at a given timestamp
 	 * @function

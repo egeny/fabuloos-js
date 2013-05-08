@@ -282,7 +282,7 @@ window.onDailymotionPlayerReady = function( id ) {
 	// Abort if we couldn't find the instance
 	if (!instance) { return; }
 
-	/**
+	/*!
 	 * Since Youtube's addEventListener method call on window.something
 	 * We have to retrieve the right DailymotionMediaRenderer instance.
 	 * Using DailymotionMediaRenderer.instances["id"] doesn't work

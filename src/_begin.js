@@ -1,4 +1,4 @@
-/**
+/*!
  * fabuloos v@VERSION
  * http://fabuloos.org
  *
