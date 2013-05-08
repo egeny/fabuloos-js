@@ -1,5 +1,20 @@
 /*global ActiveXObject */
 
+var
+	/*!
+	 * A RegExp used to extract the file extension from an URL
+	 * @type {RegExp}
+	 */
+	rExt = /\.([\w\d])+(?=\/|\?|#|$)/g,
+
+	/*!
+	 * A RegExp used to append type on multiple MIME types
+	 * @see #guessType()
+	 * @type {RegExp}
+	 */
+	rAppendType = /([^,]+)/g;
+
+
 /**
  * The base Renderer class
  * @abstract @constructor
@@ -105,44 +120,40 @@ Renderer.init = function( instance ) {
 
 /**
  * Check if a given URL is readable by this renderer
- * @static @function
+ * @static
  *
  * @param {string} url The url to check
- *
- * @returns {string} Returns "maybe" or "probably" is the MIME type is supported, "" otherwise
+ * @param {string|array} type The MIME type(s) associated to this URL
+ * @return {string} Return "probably" or "maybe" if the MIME type is supported, "" (empty string) otherwise
  */
-Renderer.canPlay = function( url ) {
+Renderer.canPlay = function canPlay(url, type) {
 	var
-		rExt = url.match( /\.([\w\d]+)(?=\/|\?|#|$)/g ), // Find the extension (.mp3, .avi)
-		ext  = rExt ? rExt[rExt.length - 1].substring( 1 ) : "", // Get the last extension
-		mime = Renderer.guessType( ext ), // Try to guess the MIME type
-		i = 0, count, canPlayType, result;
+		// Get or guess the MIME type (we can receive "undefined", treat it like a MIME)
+		mime = arguments.length === 2 ? type : Renderer.guessType(url),
+		i = 0, count, // Loop specific
+		result, canPlayType = ""; // Prepare the result (default to "" if we doesn't have any MIME type)
 
-	// No MIME type found, extension unknown, can't read
-	if (!mime) {
-		return "";
-	} else if (typeof mime === "string") {
-		// One MIME type found, check if can play
-		return this.canPlayType( mime );
-	} else {
-		// Multiple MIME types associated to the extension, loop through
-		for (count = mime.length; i < count; i++) {
-			// Test the MIME type
-			result = this.canPlayType( mime[i] );
+	// Work only with array, more convenient
+	mime = mime || []; // Don't bother to loop if we doesn't have a MIME type
+	mime = mime.push ? mime : [mime]; // "cast" regular MIME type to array
 
-			// Ouh, nice result, exit
-			if (result === "probably") {
-				return result;
-			}
+	// Loop through MIME types (for some extensions we can have multiple MIME types)
+	for (count = mime.length; i < count; i++) {
+		// Test the MIME type
+		result = this.canPlayType(mime[i]);
 
-			// Meh. Continue in case we found a probably
-			canPlayType = canPlayType || result;
+		// Ouh, nice result, exit
+		if (result === "probably") {
+			return result;
 		}
 
-		// Return the result
-		return canPlayType;
+		// Meh. Continue in case we found a probably
+		canPlayType = canPlayType || result;
 	}
-}; // end of Renderer.canPlay()
+
+	// Return the result (may be "", "maybe" or "probably")
+	return canPlayType;
+}, // end of Renderer.canPlay()
 
 
 /**
@@ -240,41 +251,44 @@ Renderer.formatTo = function( mode, obj ) {
 
 
 /**
- * Try to guess the MIME type with a file extension
- * @static @function
+ * Try to guess the MIME type based on an extension or an URL
+ * @static
  *
- * @param {string} ext The extension to use to guess MIME type
- *
- * @returns {array|string|false} Returns a string or an array of MIME type. False if the extension is unknown
+ * @param {string} ext The extension or URL to use to guess MIME type
+ * @return {string|array|false} Returns a string or an array of MIME types. undefined if the extension is unknown.
  */
-Renderer.guessType = function() {
-	// Exit if we don't have an extension to test
-	if (!arguments[0]) { return false; }
+Renderer.guessType = function guessType(ext) {
+	var type, key;
 
-	var
-		rExt = new RegExp( arguments[0], "i" ), // A RegExp based on the extension
-		rReplace = /([^,]+)/g, // A RegExp used to append type on multiple MIME
-		type, ext;
+	// Treat ext as full URL if its length is more than 5 characters
+	if (ext && ext.length > 5) {
+		ext = ext.match(rExt); // Get the probable extensions
+		ext = ext ? ext[ext.length - 1].substring(1) : ""; // Keep the last one
+	}
+
+	// Exit if we don't have an extension to test
+	if (!ext) { return; }
+
+	// Transforming the extension to a RegExp, easier to find in Renderer.mimes' keys
+	ext = new RegExp(ext, "i");
 
 	for (type in Renderer.mimes) {
-		for (ext in Renderer.mimes[type]) {
-
+		for (key in Renderer.mimes[type]) {
 			// Check if this key is the extension we're looking for
-			if (rExt.test( ext )) {
+			if (ext.test(key)) {
 				// Check if the MIME is an array
-				if (Renderer.mimes[type][ext].join) {
+				if (Renderer.mimes[type][key].push) {
 					// Before returning, append the type in front of MIMEs
-					return Renderer.mimes[type][ext].join().replace( rReplace, type + "/$1" ).split( "," );
+					return Renderer.mimes[type][key].join().replace(rAppendType, type + "/$1").split(",");
 				} else {
-					return type + "/" + Renderer.mimes[type][ext];
+					return type + "/" + Renderer.mimes[type][key];
 				}
 			}
-
 		} // end of for (ext in Renderer.mimes[type])
 	} // end of for (type in Renderer.mimes)
 
-	// Return false if extension is unknown
-	return false;
+	// Return undefined if extension is unknown
+	return;
 }; // end of Renderer.guessType()
 
 
