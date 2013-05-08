@@ -1,29 +1,29 @@
 /*global Renderer */
 
 /**
- * HTMLMediaRenderer
+ * HTMLRenderer
  * @constructor
  *
  * @param {string|Element} element The id of the element or the element to base on, or the media type of the renderer (audio or video)
  * @param {object} config The renderer config
  *
- * @returns {HTMLMediaRenderer} A new HTMLMediaRenderer instance
+ * @returns {HTMLRenderer} A new HTMLRenderer instance
  *
  * @example
  *  <code>
- *    // Create an HTMLMediaRenderer instance based on the element which have "player" as ID
- *    var renderer = new HTMLMediaRenderer( "player" );
+ *    // Create an HTMLRenderer instance based on the element which have "player" as ID
+ *    var renderer = new HTMLRenderer( "player" );
  *  </code>
  *  <code>
- *    // Create an HTMLMediaRenderer instance based on an existing element
- *    var renderer = new HTMLMediaRenderer( element );
+ *    // Create an HTMLRenderer instance based on an existing element
+ *    var renderer = new HTMLRenderer( element );
  *  </code>
  *  <code>
- *    // Create an HTMLMediaRenderer instance using a &lt;video&gt; tag and a specific config
- *    var renderer = new HTMLMediaRenderer( "video", { id: "player" } );
+ *    // Create an HTMLRenderer instance using a &lt;video&gt; tag and a specific config
+ *    var renderer = new HTMLRenderer( "video", { id: "player" } );
  *  </code>
  */
-function HTMLMediaRenderer() {
+function HTMLRenderer() {
 	var
 		mediaType, // The tag we have to create
 		rMediaType = /audio|video/i, // A RegExp used to find which tag we have to create
@@ -54,7 +54,7 @@ function HTMLMediaRenderer() {
 	}
 
 	// Determine the mediaType
-	this.mediaType = mediaType ? mediaType[0].toLowerCase() : HTMLMediaRenderer.defaultMediaType;
+	this.mediaType = mediaType ? mediaType[0].toLowerCase() : HTMLRenderer.defaultMediaType;
 
 	// Watch if there is an id
 	if (this.element) {
@@ -83,17 +83,17 @@ function HTMLMediaRenderer() {
 	}
 
 	return instance;
-} // end of HTMLMediaRenderer constructor
+} // end of HTMLRenderer constructor
 
 
 // Set the constructor name if it doesn't exists (IE)
 // Beware to only set it if undefined, this property is read-only in strict mode
-if (!HTMLMediaRenderer.name) {
-	HTMLMediaRenderer.name = "HTMLMediaRenderer";
+if (!HTMLRenderer.name) {
+	HTMLRenderer.name = "HTMLRenderer";
 }
 
-HTMLMediaRenderer.prototype = new Renderer(); // Inherit from Renderer
-HTMLMediaRenderer.prototype.constructor = HTMLMediaRenderer; // Don't forget to correct the constructor
+HTMLRenderer.prototype = new Renderer(); // Inherit from Renderer
+HTMLRenderer.prototype.constructor = HTMLRenderer; // Don't forget to correct the constructor
 
 
 /**
@@ -101,7 +101,7 @@ HTMLMediaRenderer.prototype.constructor = HTMLMediaRenderer; // Don't forget to 
  * @static
  * @type {string}
  */
-HTMLMediaRenderer.defaultMediaType = "video";
+HTMLRenderer.defaultMediaType = "video";
 
 
 /**
@@ -109,7 +109,7 @@ HTMLMediaRenderer.defaultMediaType = "video";
  * @static
  * @type {boolean}
  */
-HTMLMediaRenderer.isAudioSupported = !!document.createElement( "audio" ).canPlayType;
+HTMLRenderer.isAudioSupported = !!document.createElement( "audio" ).canPlayType;
 
 
 /**
@@ -117,7 +117,7 @@ HTMLMediaRenderer.isAudioSupported = !!document.createElement( "audio" ).canPlay
  * @static
  * @type {boolean}
  */
-HTMLMediaRenderer.isVideoSupported = !!document.createElement( "video" ).canPlayType;
+HTMLRenderer.isVideoSupported = !!document.createElement( "video" ).canPlayType;
 
 
 /**
@@ -125,11 +125,11 @@ HTMLMediaRenderer.isVideoSupported = !!document.createElement( "video" ).canPlay
  * @static
  * @type {boolean}
  */
-HTMLMediaRenderer.isSupported = HTMLMediaRenderer.isAudioSupported && HTMLMediaRenderer.isVideoSupported;
+HTMLRenderer.isSupported = HTMLRenderer.isAudioSupported && HTMLRenderer.isVideoSupported;
 
 // If supported, append this renderer to the supported renderers stack
-if (HTMLMediaRenderer.isSupported) {
-	Renderer.supported.push( HTMLMediaRenderer );
+if (HTMLRenderer.isSupported) {
+	Renderer.supported.push( HTMLRenderer );
 }
 
 
@@ -138,7 +138,7 @@ if (HTMLMediaRenderer.isSupported) {
  * @static
  * @type {boolean}
  */
-HTMLMediaRenderer.canPlay = Renderer.canPlay;
+HTMLRenderer.canPlay = Renderer.canPlay;
 
 
 /**
@@ -149,27 +149,27 @@ HTMLMediaRenderer.canPlay = Renderer.canPlay;
  *
  * @returns {string} Returns "maybe" or "probably" is the MIME type is supported, "" otherwise
  */
-HTMLMediaRenderer.canPlayType = function( type ) {
+HTMLRenderer.canPlayType = function( type ) {
 	var
 		mediaType = /^(audio|video)/.exec( type ); // Retrieve the kind of media we're trying to play
-		mediaType = mediaType ? mediaType[0] : HTMLMediaRenderer.defaultMediaType; // Handle unknown media kind (application for HLS stream)
+		mediaType = mediaType ? mediaType[0] : HTMLRenderer.defaultMediaType; // Handle unknown media kind (application for HLS stream)
 
-	return HTMLMediaRenderer.isSupported ? document.createElement( mediaType ).canPlayType( type ) : "";
+	return HTMLRenderer.isSupported ? document.createElement( mediaType ).canPlayType( type ) : "";
 }; // end of HTMLVideoRenderer.canPlayType()
 
 
-// Extend the HTMLMediaRenderer prototype
-Renderer.extend(HTMLMediaRenderer.prototype, {
+// Extend the HTMLRenderer prototype
+Renderer.extend(HTMLRenderer.prototype, {
 
 	/**
-	 * A flag to check if this renderer is ready. HTMLMediaRenderer are always ready.
+	 * A flag to check if this renderer is ready. HTMLRenderer are always ready.
 	 * @type {boolean}
 	 */
 	isReady: true,
 
 
 	/**
-	 * For HTMLMediaRenderer we can use addEventListener
+	 * For HTMLRenderer we can use addEventListener
 	 * @see Renderer.prototype.bind
 	 */
 	bind: function( type ) {
@@ -254,7 +254,7 @@ Renderer.extend(HTMLMediaRenderer.prototype, {
 
 
 	/**
-	 * For HTMLMediaRenderer we can use removeEventListener
+	 * For HTMLRenderer we can use removeEventListener
 	 * @see Renderer.prototype.unbind
 	 */
 	unbind: function( type ) {
@@ -270,4 +270,4 @@ Renderer.extend(HTMLMediaRenderer.prototype, {
 }); // end of Renderer.extend()
 
 // Expose
-window.HTMLMediaRenderer = HTMLMediaRenderer;
+window.HTMLRenderer = HTMLRenderer;

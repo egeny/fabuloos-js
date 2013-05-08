@@ -1,28 +1,28 @@
 /*global Renderer, FlashRenderer */
 
 /**
- * FlashMediaRenderer
+ * FabuloosFlashRenderer
  * @constructor
  *
  * @param {object} config The renderer config
  *
- * @returns {FlashMediaRenderer} A new FlashMediaRenderer instance
+ * @returns {FabuloosFlashRenderer} A new FabuloosFlashRenderer instance
  */
-function FlashMediaRenderer( config ) {
-	this.config = Renderer.merge( config, FlashMediaRenderer.config ); // Merge the config with defaults
+function FabuloosFlashRenderer( config ) {
+	this.config = Renderer.merge( config, FabuloosFlashRenderer.config ); // Merge the config with defaults
 
 	return FlashRenderer.init( this );
-} // end of FlashMediaRenderer constructor
+} // end of FabuloosFlashRenderer constructor
 
 
 // Set the constructor name if it doesn't exists (IE)
 // Beware to only set it if undefined, this property is read-only in strict mode
-if (!FlashMediaRenderer.name) {
-	FlashMediaRenderer.name = "FlashMediaRenderer";
+if (!FabuloosFlashRenderer.name) {
+	FabuloosFlashRenderer.name = "FabuloosFlashRenderer";
 }
 
-FlashMediaRenderer.prototype = new FlashRenderer(); // Inherit from FlashRenderer
-FlashMediaRenderer.prototype.constructor = FlashMediaRenderer; // Don't forget to correct the constructor
+FabuloosFlashRenderer.prototype = new FlashRenderer(); // Inherit from FlashRenderer
+FabuloosFlashRenderer.prototype.constructor = FabuloosFlashRenderer; // Don't forget to correct the constructor
 
 
 /**
@@ -30,8 +30,8 @@ FlashMediaRenderer.prototype.constructor = FlashMediaRenderer; // Don't forget t
  * @static
  * @type {object}
  */
-FlashMediaRenderer.config = {
-	data: "FlashMediaRenderer.swf"
+FabuloosFlashRenderer.config = {
+	data: "FabuloosFlashRenderer.swf"
 };
 
 
@@ -40,7 +40,7 @@ FlashMediaRenderer.config = {
  * @static
  * @type {object}
  */
-FlashMediaRenderer.types = {
+FabuloosFlashRenderer.types = {
 	// Application (manifest)
 	"application/f4m+xml":  "probably",
 	"application/smil+xml": "probably",
@@ -66,7 +66,7 @@ FlashMediaRenderer.types = {
  * @returns {string} Returns "probably" if the URL's protocol is RTMP, call Renderer.canPlay otherwise
  * @see Renderer.canPlay
  */
-FlashMediaRenderer.canPlay = function( url ) {
+FabuloosFlashRenderer.canPlay = function( url ) {
 	return (/^rtmp/).test( url ) ? "probably" : Renderer.canPlay.call( this, url );
 };
 
@@ -76,7 +76,7 @@ FlashMediaRenderer.canPlay = function( url ) {
  * @static
  * @type {function}
  */
-FlashMediaRenderer.canPlayType = Renderer.canPlayType;
+FabuloosFlashRenderer.canPlayType = Renderer.canPlayType;
 
 
 /**
@@ -84,16 +84,16 @@ FlashMediaRenderer.canPlayType = Renderer.canPlayType;
  * @static
  * @type {function}
  */
-FlashMediaRenderer.isSupported = FlashRenderer.isSupported;
+FabuloosFlashRenderer.isSupported = FlashRenderer.isSupported;
 
 // If supported, append this renderer to the supported renderers stack
-if (FlashMediaRenderer.isSupported) {
-	Renderer.supported.push( FlashMediaRenderer );
+if (FabuloosFlashRenderer.isSupported) {
+	Renderer.supported.push( FabuloosFlashRenderer );
 }
 
 
-// Extend the FlashMediaRenderer prototype
-Renderer.extend(FlashMediaRenderer.prototype, {
+// Extend the FabuloosFlashRenderer prototype
+Renderer.extend(FabuloosFlashRenderer.prototype, {
 
 	/**
 	 * Expose a property's value to the DOM.
@@ -114,4 +114,4 @@ Renderer.extend(FlashMediaRenderer.prototype, {
 }); // end of Renderer.extend()
 
 // Expose
-window.FlashMediaRenderer = FlashMediaRenderer;
+window.FabuloosFlashRenderer = FabuloosFlashRenderer;
