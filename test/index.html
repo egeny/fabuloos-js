@@ -1,9 +1,10 @@
 <!DOCTYPE html>
 <html>
 <head>
-	<meta charset="UTF-8">
+	<meta charset="UTF-8" />
 	<title>QUnit test</title>
-	<link rel="stylesheet" href="qunit/qunit.css">
+
+	<link rel="stylesheet" href="qunit/qunit.css" />
 </head>
 <body>
 	<div id="qunit"></div>
@@ -17,52 +18,39 @@
 	<script src="../src/event.js"></script>
 	<script src="../src/api.js"></script>
 
-	<!-- Fabuloos (classes) -->
-	<script src="../src/classes/Event.js"></script>
-	<script src="../src/classes/Exception.js"></script>
-	<script src="../src/classes/Item.js"></script>
-	<script src="../src/classes/List.js"></script>
-	<script src="../src/classes/Track.js"></script>
-	<script src="../src/classes/TrackCue.js"></script>
-	<script src="../src/classes/TrackCueList.js"></script>
-	<script src="../src/classes/TrackList.js"></script>
-
-	<!-- Fabuloos (renderers) -->
-	<script src="../src/renderers/Renderer.js"></script>
-	<script src="../src/renderers/FlashRenderer.js"></script>
-	<script src="../src/renderers/HTMLMediaRenderer.js"></script>
-	<script src="../src/renderers/FlashMediaRenderer.js"></script>
-	<script src="../src/renderers/YoutubeRenderer.js"></script>
-
-	<!-- Fabuloos (plugins) -->
-	<script src="../src/plugins/timed.js"></script>
-	<script src="../src/plugins/tracks.js"></script>
-	<script src="../src/core.js"></script>
-
 	<!-- Unit tests (core) -->
 	<script src="unit/core.js"></script>
 	<script src="unit/event.js"></script>
 	<script src="unit/api.js"></script>
 
-	<!-- Unit tests (classes) -->
-	<script src="unit/classes/Event.js"></script>
-	<script src="unit/classes/Exception.js"></script>
-	<script src="unit/classes/Item.js"></script>
-	<script src="unit/classes/List.js"></script>
-	<script src="unit/classes/Track.js"></script>
-	<script src="unit/classes/TrackCue.js"></script>
-	<script src="unit/classes/TrackCueList.js"></script>
-	<script src="unit/classes/TrackList.js"></script>
+	<!-- Fabuloos (renderers) -->
+	<script src="../src/renderers/Renderer.js"></script>
+	<script src="../src/renderers/FlashRenderer.js"></script>
+	<script src="../src/renderers/HTMLRenderer.js"></script>
+	<script src="../src/renderers/FabuloosFlashRenderer.js"></script>
+	<script src="../src/renderers/YoutubeRenderer.js"></script>
+	<script src="../src/renderers/DailymotionRenderer.js"></script>
 
 	<!-- Unit tests (renderers) -->
 	<script src="unit/renderers/Renderer.js"></script>
 	<script src="unit/renderers/FlashRenderer.js"></script>
-	<script src="unit/renderers/HTMLMediaRenderer.js"></script>
-	<script src="unit/renderers/FlashMediaRenderer.js"></script>
+	<script src="unit/renderers/HTMLRenderer.js"></script>
+	<script src="unit/renderers/FabuloosFlashRenderer.js"></script>
 	<script src="unit/renderers/YoutubeRenderer.js"></script>
+	<script src="unit/renderers/DailymotionRenderer.js"></script>
+
+	<!-- Fabuloos (plugins) -->
+	<script src="../src/plugins/tracks.js"></script>
+	<script src="../src/plugins/timed.js"></script>
+	<script src="../src/plugins/playlist.js"></script>
+	<script src="../src/plugins/ads.js"></script>
+	<script src="../src/plugins/tracker.js"></script>
 
 	<!-- Unit tests (plugins) -->
-	<script src="unit/plugins/timed.js"></script>
 	<script src="unit/plugins/tracks.js"></script>
+	<script src="unit/plugins/timed.js"></script>
+	<script src="unit/plugins/playlist.js"></script>
+	<script src="unit/plugins/ads.js"></script>
+	<script src="unit/plugins/tracker.js"></script>
 </body>
 </html>
