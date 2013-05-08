@@ -25,20 +25,21 @@ module.exports = function( grunt ) {
 				"src/core.js",
 				"src/event.js",
 				"src/api.js",
-				"src/tracks.js",
 
 				// Renderers
 				"src/renderers/Renderer.js",
 				"src/renderers/FlashRenderer.js",
-				"src/renderers/HTMLMediaRenderer.js",
-				"src/renderers/FlashMediaRenderer.js",
+				"src/renderers/HTMLRenderer.js",
+				"src/renderers/FabuloosFlashRenderer.js",
+				"src/renderers/YoutubeRenderer.js",
+				"src/renderers/DailymotionRenderer.js",
 
 				// Plugins
-				//"src/plugins/timed.js",
 				"src/plugins/tracks.js",
+				"src/plugins/timed.js",
 				"src/plugins/playlist.js",
-				"src/plugins/tracker.js",
-				"src/plugins/ads.js"
+				"src/plugins/ads.js",
+				"src/plugins/tracker.js"
 			],
 
 			dest: "build/<%= meta.name %>-<%= meta.version %>.js"
