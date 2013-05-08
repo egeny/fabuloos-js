@@ -6,6 +6,6 @@
  * Released under the MIT license
  * http://fabuloos.org/license
  */
-(function( window ) {
+(function(window, undefined) {
 	// Use JavaScript script mode
 	"use strict";
