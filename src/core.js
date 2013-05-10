@@ -128,7 +128,7 @@ fab.extend = function extend(obj) {
 
 	// If we have only one argument we want to augment the prototype
 	if (args.length === 1) {
-		args.unshift(fab.prototype);
+		args.unshift(this.prototype);
 	}
 
 	// Loop through arguments from the end
