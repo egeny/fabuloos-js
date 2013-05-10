@@ -40,7 +40,7 @@ function fab(config) {
 
 	// Search for an instance in the cache having this id
 	while (id && (instance = fab.instances[i++])) {
-		if (instance._.id === id) {
+		if (instance._id === id) {
 			return instance;
 		}
 	}
@@ -202,33 +202,42 @@ fab.extend({
 	 */
 	init: function init(config) {
 		// We're trying to initialize an existing instance, destroy it first
-		if (this._ && this._.id) {
+		if (this._id) {
 			this.destroy();
+
+			// Since we're re-initializing this instance, delete _element in order to correctly get a new one
+			delete this._element;
 		}
 
-		// Declare a private space (will reset the existing one if any)
-		this._ = {
-			uid: ++fab.UID,
+		// Define an hash for the renderers' configuration
+		this._config = {};
 
-			// Define the index for this instance in the instances' cache
-			index: fab.instances.push(this) - 1,
+		// Define the index for this instance in the instances' cache
+		this._index = fab.instances.push(this) - 1;
 
-			// Define the default supported renderers (may be updated when setting the config)
-			renderers: Renderer.supported
-		};
+		// Define the default supported renderers (may be updated when setting the config)
+		this._renderers = Renderer.supported;
+
+		/*!
+		 * Use a closure to create an event trigerrer
+		 * Used when a renderer have to trigger an event on this instance
+		 * The "this" keyword will be corrected
+		 */
+		this._triggerer = (function(instance) {
+			return function trigerrer() {
+				return instance.trigger.apply(instance, arguments);
+			};
+		}(this));
+
+		// Define an UID for this instance (used to define a default ID when needed)
+		this._uid = ++fab.UID;
 
 		// Try to find the element to base on
 		this.element(config);
 
-		// Use a closure to prepare a handleManager to correct the "this" keyword when receiving an event from a renderer
-		/*this.handleManager = (function( instance ){
-			return function() {
-				return instance.trigger.apply( instance, arguments );
-			};
-		}( this ));*/
-
 		// Set the rest of the config (and allow chaining)
-		return this.set(config);
+		//return this.set(config);
+		return this;
 	}, // end of init()
 
 
@@ -240,17 +249,17 @@ fab.extend({
 	 * @return {null}
 	 */
 	destroy: function destroy() {
-		var instance, i = this._.index; // Loop specific
+		var instance, i = this._index; // Loop specific
 
 		// Restore the old element (if any)
 		this.restore();
 
 		// Remove this instance from the caches
-		fab.instances.splice(this._.index, 1);
+		fab.instances.splice(this._index, 1);
 
 		// Correct the indexes of the instances following the one we just removed
 		while ((instance = fab.instances[i])) {
-			instance._.index = i++;
+			instance._index = i++;
 		}
 
 		// It is more convenient to return null (end chaining)
@@ -279,8 +288,8 @@ fab.extend({
 	 */
 	element: function element(config) {
 		// Act as getter if there is no arguments and if there is an element (might be null)
-		if (config === undefined && "element" in this._) {
-			return this._.element;
+		if (config === undefined && "_element" in this) {
+			return this._element;
 		}
 
 		var
@@ -289,12 +298,12 @@ fab.extend({
 			id  = typeof elt === "string" ? elt.replace("#", "") : elt.id;
 
 		// If we are changing the element, restore the old one
-		if (this._.old) {
+		if (this._old) {
 			this.restore();
 		}
 
-		this._.id  = id || "fabuloos-" + this._.uid; // Set the new id or use the default setted by #restore()
-		this._.old = this._.element = elt.nodeName ? elt : document.getElementById(id); // Set the current element
+		this._id  = id || "fabuloos-" + this._uid; // Set the new id or use the default setted by #restore()
+		this._old = this._element = elt.nodeName ? elt : document.getElementById(id); // Set the current element
 
 		// An audio or video element was found, try to read its config
 		/*if (this.element && /audio|video/i.test( this.element.nodeName )) {
@@ -322,13 +331,13 @@ fab.extend({
 	 */
 	restore: function restore() {
 		// Replace the element with the old one if necessary
-		if (this._.element && this._.old && this._.element !== this._.old) {
-			this._.element.parentNode.replaceChild(this._.old, this._.element);
+		if (this._element && this._old && this._element !== this._old) {
+			this._element.parentNode.replaceChild(this._old, this._element);
 		}
 
 		// Set a default id since this instance isn't related to any element
-		this._.id  = "fabuloos-" + this._.uid;
-		this._.old = this._.element = null;
+		this._id  = "fabuloos-" + this._uid;
+		this._old = this._element = null;
 
 		return this; // Chaining
 	} // end of restore()

@@ -439,7 +439,7 @@ Renderer.prototype = {
 
 		// If we have an handler we can call it!
 		if (this.handler) {
-			this.handler.call( this, event );
+			this.handler( event );
 		}
 	}, // end of dispatch()
 

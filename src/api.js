@@ -438,13 +438,13 @@ fab.extend({
 
 		// Create the new renderer. HTMLMediaRenderer need the element to determine which tag to create
 		// TODO: The new HTMLMediaRenderer should reflect the source MIME type
-		this._renderer = renderer === HTMLMediaRenderer ? new renderer( this.element, config ) : new renderer( config );
+		this._renderer = renderer === HTMLRenderer ? new renderer( this.element, config ) : new renderer( config );
 
 		// Define the internal handler manager
-		this._renderer.handler = this.handleManager;
+		this._renderer.handler = this._triggerer;
 
 		// Replace the old renderer markup
-		this._renderer.replace( this.element );
+		this._renderer.replace( this._element );
 
 		// Apply the current config
 		for (var property in this._config) {
@@ -592,7 +592,7 @@ fab.extend({
 			},
 
 			// Loop specific
-			i = 0, count = this._config.renderers.length, renderer,
+			i = 0, count = this._renderers.length, renderer,
 
 			// Used to store the canPlayUsing result and guess if we changed the renderer
 			canPlay,
@@ -611,7 +611,7 @@ fab.extend({
 		// Loop through each renderers
 		for (; i < count; i++) {
 			// Admit it, it's much easier to read like that
-			renderer = this._config.renderers[i];
+			renderer = this._renderers[i];
 
 			// Skip the current renderer since it failed sooner
 			if (this._renderer && this._renderer.constructor === renderer) {

@@ -8,6 +8,8 @@ test("Correctly exposed", function() {
 
 
 test("fab() and cache", function() {
+	fab.instances.length = 0; // Empty the cache to makes sure our tests will be correct
+
 	ok(!fab.instances.length, "The cache is empty");
 
 	var player = fab("dummy");
@@ -29,34 +31,34 @@ test("Instances ID and UID consistancy", function() {
 		p2 = fab(),
 		p3 = fab("div");
 
-	equal(p1._.id, "fabuloos-1", "fab() should give `fabuloos-1` as id");
-	equal(p2._.id, "fabuloos-2", "fab() should give `fabuloos-2` as id");
-	equal(p3._.id, "div",        'fab("div") should give "div" as id');
+	equal(p1._id, "fabuloos-1", "fab() should give `fabuloos-1` as id");
+	equal(p2._id, "fabuloos-2", "fab() should give `fabuloos-2` as id");
+	equal(p3._id, "div",        'fab("div") should give "div" as id');
 
 	p1.restore();
-	equal(p1._.id, "fabuloos-1", "p1.restore() should keep the same id");
+	equal(p1._id, "fabuloos-1", "p1.restore() should keep the same id");
 
 	p3.restore();
-	equal(p3._.id, "fabuloos-3", "p3.restore() should give `fabuloos-3` as id");
+	equal(p3._id, "fabuloos-3", "p3.restore() should give `fabuloos-3` as id");
 
 	p1.element("div");
-	equal(p1._.id, "div", 'p1.element("div") should give "div" as id');
+	equal(p1._id, "div", 'p1.element("div") should give "div" as id');
 
 	p1.element(null);
-	equal(p1._.id, "fabuloos-1", "p1.element(null) should give `fabuloos-1` as id");
+	equal(p1._id, "fabuloos-1", "p1.element(null) should give `fabuloos-1` as id");
 
 	p3.element("video");
-	equal(p3._.id, "video", 'p3.element("video") should give "video" as id');
+	equal(p3._id, "video", 'p3.element("video") should give "video" as id');
 
 	p3.element(null);
-	equal(p3._.id, "fabuloos-3", "p3.element(null) should give `fabuloos-3` as id");
+	equal(p3._id, "fabuloos-3", "p3.element(null) should give `fabuloos-3` as id");
 
 	p3.init();
-	equal(p3._.id, "fabuloos-4", "p3.init() should increment uid and give `fabuloos-4` as id");
+	equal(p3._id, "fabuloos-4", "p3.init() should increment uid and give `fabuloos-4` as id");
 
 	p1.init("div");
-	equal(p1._.id,  "div", 'p1.init("div") should increment uid and give "div" as id');
-	equal(p1._.uid, 5,     "Now, p1's uid should be 5");
+	equal(p1._id,  "div", 'p1.init("div") should increment uid and give "div" as id');
+	equal(p1._uid, 5,     "Now, p1's uid should be 5");
 });
 
 
@@ -74,121 +76,121 @@ test("Multiple signature for fab() (strongly related to element())", function() 
 
 	// Start by testing falsey (should create a new instance)
 	player = fab(null);
-	equal(player._.id,      "fabuloos-1", 'Calling `fab(null)` should give an instance with "fabuloos-1" as id');
-	equal(player._.element, null,         'Calling `fab(null)` should give an instance with `null` as element');
+	equal(player._id,      "fabuloos-1", 'Calling `fab(null)` should give an instance with "fabuloos-1" as id');
+	equal(player._element, null,         'Calling `fab(null)` should give an instance with `null` as element');
 	player.destroy();
 
 	player = fab(undefined);
-	equal(player._.id,      "fabuloos-2", 'Calling `fab(undefined)` should give an instance with "fabuloos-2" as id');
-	equal(player._.element, null,         'Calling `fab(undefined)` should give an instance with `null` as element');
+	equal(player._id,      "fabuloos-2", 'Calling `fab(undefined)` should give an instance with "fabuloos-2" as id');
+	equal(player._element, null,         'Calling `fab(undefined)` should give an instance with `null` as element');
 	player.destroy();
 
 	player = fab(false);
-	equal(player._.id,      "fabuloos-3", 'Calling `fab(false)` should give an instance with "fabuloos-3" as id');
-	equal(player._.element, null,         'Calling `fab(false)` should give an instance with `null` as element');
+	equal(player._id,      "fabuloos-3", 'Calling `fab(false)` should give an instance with "fabuloos-3" as id');
+	equal(player._element, null,         'Calling `fab(false)` should give an instance with `null` as element');
 	player.destroy();
 
 	player = fab(0);
-	equal(player._.id,      "fabuloos-4", 'Calling `fab(0)` should give an instance with "fabuloos-4" as id');
-	equal(player._.element, null,         'Calling `fab(0)` should give an instance with `null` as element');
+	equal(player._id,      "fabuloos-4", 'Calling `fab(0)` should give an instance with "fabuloos-4" as id');
+	equal(player._element, null,         'Calling `fab(0)` should give an instance with `null` as element');
 	player.destroy();
 
 	player = fab(NaN);
-	equal(player._.id,      "fabuloos-5", 'Calling `fab(NaN)` should give an instance with "fabuloos-5" as id');
-	equal(player._.element, null,         'Calling `fab(NaN)` should give an instance with `null` as element');
+	equal(player._id,      "fabuloos-5", 'Calling `fab(NaN)` should give an instance with "fabuloos-5" as id');
+	equal(player._element, null,         'Calling `fab(NaN)` should give an instance with `null` as element');
 	player.destroy();
 
 	player = fab("");
-	equal(player._.id,      "fabuloos-6", 'Calling `fab("")` should give an instance with "fabuloos-6" as id');
-	equal(player._.element, null,         'Calling `fab("")` should give an instance with `null` as element');
+	equal(player._id,      "fabuloos-6", 'Calling `fab("")` should give an instance with "fabuloos-6" as id');
+	equal(player._element, null,         'Calling `fab("")` should give an instance with `null` as element');
 	player.destroy();
 
 	// Test Truthy (should create a new instance)
 	player = fab(true);
-	equal(player._.id,      "fabuloos-7", 'Calling `fab(true)` should give an instance with "fabuloos-7" as id');
-	equal(player._.element, null,         'Calling `fab(true)` should give an instance with `null` as element');
+	equal(player._id,      "fabuloos-7", 'Calling `fab(true)` should give an instance with "fabuloos-7" as id');
+	equal(player._element, null,         'Calling `fab(true)` should give an instance with `null` as element');
 	player.destroy();
 
 	player = fab(1);
-	equal(player._.id,      "fabuloos-8", 'Calling `fab(1)` should give an instance with "fabuloos-8" as id');
-	equal(player._.element, null,         'Calling `fab(1)` should give an instance with `null` as element');
+	equal(player._id,      "fabuloos-8", 'Calling `fab(1)` should give an instance with "fabuloos-8" as id');
+	equal(player._element, null,         'Calling `fab(1)` should give an instance with `null` as element');
 	player.destroy();
 
 	player = fab([]);
-	equal(player._.id,      "fabuloos-9", 'Calling `fab([])` should give an instance with "fabuloos-9" as id');
-	equal(player._.element, null,         'Calling `fab([])` should give an instance with `null` as element');
+	equal(player._id,      "fabuloos-9", 'Calling `fab([])` should give an instance with "fabuloos-9" as id');
+	equal(player._element, null,         'Calling `fab([])` should give an instance with `null` as element');
 	player.destroy();
 
 	player = fab({});
-	equal(player._.id,      "fabuloos-10", 'Calling `fab({})` should give an instance with "fabuloos-10" as id');
-	equal(player._.element, null,          'Calling `fab({})` should give an instance with `null` as element');
+	equal(player._id,      "fabuloos-10", 'Calling `fab({})` should give an instance with "fabuloos-10" as id');
+	equal(player._element, null,          'Calling `fab({})` should give an instance with `null` as element');
 	player.destroy();
 
 	player = fab(function() {});
-	equal(player._.id,      "fabuloos-11", 'Calling `fab(function() {})` should give an instance with "fabuloos-11" as id');
-	equal(player._.element, null,          'Calling `fab(function() {})` should give an instance with `null` as element');
+	equal(player._id,      "fabuloos-11", 'Calling `fab(function() {})` should give an instance with "fabuloos-11" as id');
+	equal(player._element, null,          'Calling `fab(function() {})` should give an instance with `null` as element');
 	player.destroy();
 
 	// Test the real things
 	player = fab("dummy");
-	equal(player._.id,      "dummy", 'Calling `fab("dummy")` should give an instance with "dummy" as id');
-	equal(player._.element, null,    'Calling `fab("dummy")` should give an instance with `null` as element');
+	equal(player._id,      "dummy", 'Calling `fab("dummy")` should give an instance with "dummy" as id');
+	equal(player._element, null,    'Calling `fab("dummy")` should give an instance with `null` as element');
 	player.destroy();
 
 	player = fab("div1");
-	equal(player._.id,      "div1", 'Calling `fab("div1")` should give an instance with "div1" as id');
-	equal(player._.element, div1,   'Calling `fab("div1")` should give an instance with div1 as element');
+	equal(player._id,      "div1", 'Calling `fab("div1")` should give an instance with "div1" as id');
+	equal(player._element, div1,   'Calling `fab("div1")` should give an instance with div1 as element');
 	player.destroy();
 
 	player = fab("div2");
-	equal(player._.id,      "div2", 'Calling `fab("div2")` should give an instance with "div2" as id');
-	equal(player._.element, null,   'Calling `fab("div2")` should give an instance with `null` as element');
+	equal(player._id,      "div2", 'Calling `fab("div2")` should give an instance with "div2" as id');
+	equal(player._element, null,   'Calling `fab("div2")` should give an instance with `null` as element');
 	player.destroy();
 
 	player = fab("#div1");
-	equal(player._.id,      "div1", 'Calling `fab("#div1")` should give an instance with "div1" as id');
-	equal(player._.element, div1,   'Calling `fab("#div1")` should give an instance with div1 as element');
+	equal(player._id,      "div1", 'Calling `fab("#div1")` should give an instance with "div1" as id');
+	equal(player._element, div1,   'Calling `fab("#div1")` should give an instance with div1 as element');
 	player.destroy();
 
 	player = fab(div1);
-	equal(player._.id,      "div1", 'Calling `fab(div1)` should give an instance with "div1" as id');
-	equal(player._.element, div1,   'Calling `fab(div1)` should give an instance with div1 as element');
+	equal(player._id,      "div1", 'Calling `fab(div1)` should give an instance with "div1" as id');
+	equal(player._element, div1,   'Calling `fab(div1)` should give an instance with div1 as element');
 	player.destroy();
 
 	player = fab(div2);
-	equal(player._.id,      "fabuloos-17", 'Calling `fab(div2)` should give an instance with "fabuloos-17" as id');
-	equal(player._.element, div2,          'Calling `fab(div2)` should give an instance with div2 as element');
+	equal(player._id,      "fabuloos-17", 'Calling `fab(div2)` should give an instance with "fabuloos-17" as id');
+	equal(player._element, div2,          'Calling `fab(div2)` should give an instance with div2 as element');
 	player.destroy();
 
 	// Test config mode
 	player = fab({ element: "dummy" });
-	equal(player._.id,      "dummy", 'Calling `fab({ element: "dummy" })` should give an instance with "dummy" as id');
-	equal(player._.element, null,    'Calling `fab({ element: "dummy" })` should give an instance with `null` as element');
+	equal(player._id,      "dummy", 'Calling `fab({ element: "dummy" })` should give an instance with "dummy" as id');
+	equal(player._element, null,    'Calling `fab({ element: "dummy" })` should give an instance with `null` as element');
 	player.destroy();
 
 	player = fab({ element: "div1" });
-	equal(player._.id,      "div1", 'Calling `fab({ element: { element: "div1" })` should give an instance with "div1" as id');
-	equal(player._.element, div1,   'Calling `fab({ element: { element: "div1" })` should give an instance with div1 as element');
+	equal(player._id,      "div1", 'Calling `fab({ element: { element: "div1" })` should give an instance with "div1" as id');
+	equal(player._element, div1,   'Calling `fab({ element: { element: "div1" })` should give an instance with div1 as element');
 	player.destroy();
 
 	player = fab({ element: "div2" });
-	equal(player._.id,      "div2", 'Calling `fab({ element: { element: "div2" })` should give an instance with "div2" as id');
-	equal(player._.element, null,   'Calling `fab({ element: { element: "div2" })` should give an instance with `null` as element');
+	equal(player._id,      "div2", 'Calling `fab({ element: { element: "div2" })` should give an instance with "div2" as id');
+	equal(player._element, null,   'Calling `fab({ element: { element: "div2" })` should give an instance with `null` as element');
 	player.destroy();
 
 	player = fab({ element: "#div1" });
-	equal(player._.id,      "div1", 'Calling `fab({ element: { element: "#div1" })` should give an instance with "div1" as id');
-	equal(player._.element, div1,   'Calling `fab({ element: { element: "#div1" })` should give an instance with div1 as element');
+	equal(player._id,      "div1", 'Calling `fab({ element: { element: "#div1" })` should give an instance with "div1" as id');
+	equal(player._element, div1,   'Calling `fab({ element: { element: "#div1" })` should give an instance with div1 as element');
 	player.destroy();
 
 	player = fab({ element: div1 });
-	equal(player._.id,      "div1", 'Calling `fab({ element: { element: div1 })` should give an instance with "div1" as id');
-	equal(player._.element, div1,   'Calling `fab({ element: { element: div1 })` should give an instance with div1 as element');
+	equal(player._id,      "div1", 'Calling `fab({ element: { element: div1 })` should give an instance with "div1" as id');
+	equal(player._element, div1,   'Calling `fab({ element: { element: div1 })` should give an instance with div1 as element');
 	player.destroy();
 
 	player = fab({ element: div2 });
-	equal(player._.id,      "fabuloos-23", 'Calling `fab({ element: { element: div2 })` should give an instance with "fabuloos-23" as id');
-	equal(player._.element, div2,         'Calling `fab({ element: { element: div2 })` should give an instance with div2 as element');
+	equal(player._id,      "fabuloos-23", 'Calling `fab({ element: { element: div2 })` should give an instance with "fabuloos-23" as id');
+	equal(player._element, div2,         'Calling `fab({ element: { element: div2 })` should give an instance with div2 as element');
 	player.destroy();
 });
 
@@ -230,10 +232,9 @@ test("Init should do its stuff", function() {
 
 	var player = fab();
 
-	ok(player._, "An instance should have its own private space");
-	equal(player._.id, "fabuloos-1", "An instance should have an id");
-	equal(player._.index, 0, "An instance should have a reference for its position in the cache");
-	ok(player._.renderers, "An instance should have a renderers property");
+	equal(player._id, "fabuloos-1", "An instance should have an id");
+	equal(player._index, 0, "An instance should have a reference for its position in the cache");
+	ok(player._renderers, "An instance should have a renderers property");
 });
 
 
@@ -249,7 +250,7 @@ test("Destroying the instance", function() {
 	document.body.appendChild(div);
 
 	player = fab(div);
-	player._.element = video;
+	player._element = video;
 
 	document.body.replaceChild(video, div);
 
@@ -260,16 +261,16 @@ test("Destroying the instance", function() {
 	player  = fab();
 	player2 = fab();
 	player.destroy();
-	equal(player2._.index, 0, "Destroying an instance should correct the other instances' indexes");
+	equal(player2._index, 0, "Destroying an instance should correct the other instances' indexes");
 });
 
 
 test("Restoring old element", function() {
 	var
 		player  = fab(),
-		id      = player._.id,
-		element = player._.element,
-		old     = player._.old,
+		id      = player._id,
+		element = player._element,
+		old     = player._old,
 		div     = document.createElement("div"),
 		div2    = document.createElement("div");
 
@@ -278,21 +279,21 @@ test("Restoring old element", function() {
 	document.body.appendChild(div);
 
 	player.restore();
-	equal(player._.id, id, "After restoring, the id should be the same as previously");
+	equal(player._id, id, "After restoring, the id should be the same as previously");
 
-	player._.element = div;
+	player._element = div;
 	ok(player.restore(), "Restoring an element badly setted should fail silently");
 
-	player._.element = null;
-	player._.old     = div;
+	player._element = null;
+	player._old     = div;
 	ok(player.restore(), "Restoring an old element badly setted should fail silently");
 
-	player._.element = div;
-	player._.old     = div;
+	player._element = div;
+	player._old     = div;
 	ok(player.restore(), "Asking to restore for the same element should do nothing");
 
-	player._.element = div;
-	player._.old     = div2;
+	player._element = div;
+	player._old     = div2;
 	player.restore();
 	equal(document.getElementById("dummy"), div2, "Restore should swap element");
 });
