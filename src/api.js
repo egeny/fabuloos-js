@@ -65,25 +65,23 @@ fab.extend({
 	 *
 	 * @param {string} cmd The command to launch.
 	 *   The other arguments will be passed to the command.
-	 *   The arguments passed to the closure will be concatenate to arguments used when calling this method.
+	 *   The arguments passed to the closure will be concatenated to arguments used when calling this method.
 	 * @return {function} Return a closure which will call the command
 	 *
 	 * @example
-	 *  <code>
-	 *    var player = fabuloos( "media" );
-	 *    player.on( "ended", player.closure( "src", "http://example.org/file.mp4" ) ); // Automatically change the source when the first is finished
-	 *    player.on( "ended", player.closure( "currentTime", 0 ) ); // Rewind when the media end
-	 *    fab.bind( btn, player.closure( "play" ) ); // Bind a button to launch a command
-	 *  </code>
+	 *   var player = fab();
+	 *   player.on("ended", player.closure("src", "http://fabuloos.org/video.mp4")); // Automatically change the source when the first is finished
+	 *   player.on("ended", player.closure("currentTime", 0)); // Rewind when the media end
+	 *   fab.bind(btn, "click", player.closure("play")); // Bind a button to launch a command
 	 */
-	closure: function( cmd ) {
+	closure: function closure(cmd) {
 		var
 			that = this, // Save a reference to this instance
-			args = Array.prototype.slice.call( arguments ); // Convert arguments to a real array
+			args = fab.toArray(arguments); // Convert arguments to a real array
 
-		return function() {
+		return function closure() {
 			// Call the command, pass the arguments from the previous closure, merge with this closure arguments
-			return that.cmd.apply( that, args.concat( Array.prototype.slice.call( arguments ) ) );
+			return that.cmd.apply(that, args.concat(fab.toArray(arguments)));
 		};
 	}, // end of closure()
 
@@ -94,64 +92,26 @@ fab.extend({
 	 * @param {string} cmd The command to launch. The other arguments will be passed to the command.
 	 * @return {*} Return the result of the command or undefined if the command doesn't exists
 	 *
-	 * @param {string} cmd The command to launch. The other arguments will be passed to the command.
-	 * @return {*} Return the result of the command or undefined if the command doesn't exists
-	 *
 	 * @example
-	 *  <code>
-	 *    var player = fabuloos( "media" );
-	 *    player.cmd( "pause" ); // Return player to allow chaining
-	 *    player.cmd( "paused" ); // Return true or false
-	 *    player.cmd( "src", "http://example.org/file.mp4" ); // Return player to allow chaining
-	 *    player.cmd( "foo" ); // Return undefined
-	 *  </code>
+	 *   var player = fab("media");
+	 *   player.cmd("pause"); // Return player to allow chaining
+	 *   player.cmd("paused"); // Return true or false
+	 *   player.cmd("src", "http://fabuloos.org/video.mp4"); // Return player to allow chaining
+	 *   player.cmd("foo"); // Return undefined
 	 */
-	cmd: function( cmd ) {
-		// Convert arguments to a real array
-		var args = Array.prototype.slice.call( arguments );
+	cmd: function cmd(_cmd) {
+		var args = fab.toArray(arguments); // Convert arguments to a real array
 		args.shift(); // Remove the first argument (the command name)
 
-		return this[cmd] ? this[cmd].apply( this, args ) : undefined;
+		return this[_cmd] ? this[_cmd].apply(this, args) : undefined;
 	}, // end of cmd()
 
 
 	/**
-	 * Get or set the configuration
-	 * @function
-	 *
-	 * @param {object} [config=undefined] The configuration to apply. If none will behave as a getter.
-	 *
-	 * @returns {fabuloos} Return the current instance of the player to allow chaining
+	 * An alias for the #set() method
 	 */
-	config: function( config ) {
-		// No argument, acting like a getter
-		if (!config) {
-			return this._config;
-		}
-
-		var
-			// Loop specific
-			property,
-
-			// The "src" property has to be delayed
-			delayed = false;
-
-		// Loop through the received config
-		for (property in config) {
-			if (property === "src") {
-				delayed = true;
-				continue;
-			}
-
-			this.set( property, config[property] );
-		} // end of for
-
-		// After setting the config, we ask for a new source (and/or a new renderer)
-		if (delayed) {
-			this.set( "src", config );
-		}
-
-		return this; // Chaining
+	config: function config() {
+		return this.set.apply(this, arguments);
 	}, // end of config()
 
 
@@ -448,11 +408,12 @@ fab.extend({
 
 		// Apply the current config
 		for (var property in this._config) {
-			this.set( property, this._config[property] );
+			//this.set( property, this._config[property] );
+			this._renderer.set(property, this._config[property]);
 		}
 
 		// Keep a reference of the element (just in case)
-		this.element = this._renderer.element;
+		this._element = this._renderer.element;
 
 		// Attach all listeners
 		this.attach();
@@ -462,180 +423,189 @@ fab.extend({
 
 
 	/**
-	 * TODO
+	 * Define the list of supported renderers
+	 *
+	 * @params {array} renderers The renderers to define as available.
+	 * @return {fabuloos} Return the current instance to allow chaining.
+	 *
+	 * @param {Renderer} renderer The only renderer to define as available.
+	 * @return {fabuloos} Return the current instance to allow chaining.
 	 */
-	renderers: function( renderers ) {
+	renderers: function renderers(_renderers) {
 		// Act as a getter if there is no arguments
-		if (!arguments.length) {
-			return this._config.renderers || [];
+		if (!_renderers) {
+			return this._renderers;
 		}
 
-		// Makes sure we receive an array
-		renderers = (renderers.push) ? renderers : [renderers];
+		// Don't bother checking supported renderers if we received the default supported renderers
+		if (_renderers === Renderer.supported) {
+			this._renderers = Renderer.supported;
+			return this; // Chaining
+		}
 
 		var
-			supported = [], // List of supported renderers
-			i = 0, count = renderers.length; // Loop specific
+			// List of supported renderers (copying the received arguments)
+			supported = _renderers.push ? _renderers.slice(0) : [_renderers],
+			i = 0, renderer; // Loop specific
 
 		// Loop through each renderers to test them
-		for (; i < count; i++) {
-			if (renderers[i].isSupported) {
-				// This renderer is supported, add it to the stack
-				supported.push( renderers[i] );
-			}
+		while((renderer = supported[i])) {
+			// Test the renderer and remove it if unsupported
+			i += "isSupported" in renderer && renderer.isSupported ? 1 : (supported.splice(i, 1)).length - 1;
 		}
 
 		// Save the supported renderers list in the config
-		this._config.renderers = supported;
+		this._renderers = supported;
+
+		return this; // Chaining
 	}, // end of renderers()
 
 
 	/**
-	 * Set a player's property.
-	 * @function
+	 * Set a player's property
+	 * You can pass a key/value pair or an hash to set multiple properties.
+	 * Be careful though because sometimes the order of the properties is important.
+	 * For instance, you usually want to set the renderers before defining the source.
+	 * Internally the source will always be defined last.
 	 *
-	 * @param {string} property The property to set
-	 * @param {*} value The new property's value
+	 * @param {string} property The property to set.
+	 * @param {*} value The new property's value.
+	 * @return {fabuloos} Return the current instance to allow chaining.
 	 *
-	 * @returns {fabuloos} Return the current instance of the player to allow chaining
+	 * @param {object} obj An object literal of properties and their values.
+	 * @return {fabuloos} Return the current instance to allow chaining.
 	 *
 	 * @example
 	 * <code>
-	 *   var player = fabuloos( "media" );
-	 *   player.set( "autoplay", true );
+	 *   fab().set("autoplay", true); // Setting the "autoplay" property to "true"
+	 *   fab().set({
+	 *     width: 720,
+	 *     autoplay: true
+	 *   });
 	 * </code>
 	 */
-	set: function( property, value ) {
-		var
-			// Loop specific
-			i = 0, count,
+	set: function set(property, value) {
+		var obj = arguments[0] || {}, src;
 
-			// A stack of supported renderers (when defining renderers)
-			renderers = [];
+		// Handle hash mode
+		if (arguments.length === 1) {
+			// Loop through each property to set its value
+			for (property in obj) {
+				// Always set the source last
+				if (property === "src") {
+					src = obj.src;
+					continue;
+				}
 
-		// Some properties have to be handled specifically
-		switch (property) {
-			// Allow defining directly some event handlers
-			// TODO: allow more methods
-			case "on":
-				return this.on( value );
+				// Call itself to handle properly setting property/value
+				this.set(property, obj[property]);
+			}
 
-			// TODO: create a "renderers" method
-			case "renderers":
-				this.renderers( value );
-			break;
+			// Set the source (if any)
+			this.src(src);
 
-			case "src":
-				// Prefer the most specific function for "src" property
-				this.src( value );
-
-				// Makes sure the value is just a string to be setted on the renderer
-				value = value.src ? value.src : value;
-			break;
+			return this; // Allow chaining
 		}
 
-		// If the API allow to set this property ask the renderer (if any) to set it
-		if (new RegExp( property ).test( setterProperties ) && this._renderer) {
-			// Ask the renderer to change the property's value
-			this._renderer.set( property, value );
-
-			// Retrieve the value corrected by the renderer
-			value = this._renderer.get( property );
+		// Prefer specialized method having the property's name
+		if (typeof this[property] === "function") {
+			this[property](value);
+		} else if (new RegExp(property).test(setterProperties)) {
+			// If we're allowed to set this property define the property and value in the _config hash
+			// Store the value corrected by the renderer (if any)
+			this._config[property] = this._renderer ? this._renderer.set(property, value) : value;
+		} else {
+			// In the other cases store the value in the instance, prefixed with an underscore
+			this["_" + property] = value;
 		}
-
-		// Store a copy of this value
-		this._config[property] = value;
 
 		return this; // Chaining
 	}, // end of set()
 
 
 	/**
-	 * Get the source or set a new source (may change the renderer).
-	 * @function
+	 * Get the source or set a new source
+	 * This will change the renderer (if necessary) and define the source to play.
+	 * #sources() will only find the solutions available for the given source.
+	 * #src() will call #sources() internally if necessary and define the source.
 	 *
-	 * @param {string|object} [value=undefined] The new source's value. Can be string or object (see example).
+	 * @param {string} value The URL of the new source
+	 * @return {fabuloos} Return the current instance to allow chaining.
 	 *
-	 * @returns {string|fabuloos} Return the source if no param or the current instance of the player to allow chaining
+	 * @param {object} value An object literal representing the new source (might have additional properties).
+	 * @return {fabuloos} Return the current instance to allow chaining.
+	 *
+	 * @param {array} value A list of possible sources (items can be string or object as described above).
+	 * @return {fabuloos} Return the current instance to allow chaining.
+	 *
+	 * @param {undefined}
+	 * @return {string} Return the current source.
 	 *
 	 * @example
-	 * <code>
-	 *   var player = fabuloos( "media" );
-	 *   player.src(); // Get the current source
+	 *   fab().src("http://fabuloos.org/video.mp4"); // Will find a renderer for this source, create it and define the source
 	 *
-	 *   player.src( "http://example.org/file.mp4" ); // Set the source
-	 *
-	 *   // Set the source using object
-	 *   player.src({
-	 *     src: "http://example.org/file.mp4"
-	 *   });
-	 *
-	 *   // Set the source using object and helping by providing the correct MIME type
-	 *   player.src({
-	 *     src: "http://example.org/file.mp4",
+	 *   // You can help the algorith by defining the MIME type (sometime there is no extension on the URL)
+	 *   fab().src({
+	 *     src: "http://fabuloos.org/video.mp4"
 	 *     type: "video/mp4"
 	 *   });
-	 * </code>
+	 *
+	 *   // Define the list of possible sources (give more chance to be cross-platform)
+	 *   fab().src([
+	 *     "http://fabuloos.org/video.mp4",
+	 *     "http://fabuloos.org/video.ogv"
+	 *   ]);
+	 *
+	 *   // Define the list of possible sources, give some hints for the algorithm
+	 *   fab().src([
+	 *     { src: "http://fabuloos.org/video.mp4", type: "video/mp4" },
+	 *     { src: "http://fabuloos.org/video.ogv", type: "video/ogv" }
+	 *   ]);
 	 */
-	src: function( value ) {
-		// Check if we have a new source
-		if (value === undefined || (typeof value !== "string" && !value.src)) {
-			// Don't seems, it's a getter
-			return this.get( "src" );
+	src: function src(value) {
+		// Acting as a getter
+		if (value === undefined) {
+			return this.get("src");
+		}
+
+		// Expand the sources if necessary
+		if (value !== this._sources) {
+			this.sources(value); // Will find the source's type and ask the renderers if they can play it
 		}
 
 		var
-			// A neat version of value
-			source = {
-				src:  (typeof value === "string") ? value : value.src,
-				type: value.type
-			},
+			i = 0, source, // Loop specific
+			j = 0, renderer, count = this._renderers.length; // Loop specific
 
-			// Loop specific
-			i = 0, count = this._renderers.length, renderer,
-
-			// Used to store the canPlayUsing result and guess if we changed the renderer
-			canPlay,
-
-			// A small utility function
-			canPlayUsing = function( renderer ) {
-				return renderer[source.type ? "canPlayType" : "canPlay"](source.type || source.src);
-			};
-
-		// Try using the current renderer if any and can play
-		if (this._renderer && canPlayUsing( this._renderer.constructor )) {
-			this._renderer.set( "src", source.src ); // Simply change the source
-			return this; // Chaining
-		}
-
-		// Loop through each renderers
-		for (; i < count; i++) {
-			// Admit it, it's much easier to read like that
-			renderer = this._renderers[i];
-
-			// Skip the current renderer since it failed sooner
-			if (this._renderer && this._renderer.constructor === renderer) {
-				continue;
+		// Loop through each sources to find a playable one
+		while ((source = this._sources[i++])) {
+			// Test if the current renderer (if any) can handle this source
+			if (this._renderer && source.solutions[this._renderer.constructor.name]) {
+				this._renderer.set("src", source.src); // Simply ask him to change the source
+				return this; // Chaining
 			}
 
-			// Save the result to check if we didn't find a new renderer (and trigger error event)
-			canPlay = canPlayUsing( renderer );
+			// Loop through each active renderer
+			for (j = 0; j < count; j++) {
+				renderer = this._renderers[j]; // More convenient
 
-			// Test if the renderer can play the source
-			if (canPlay) {
-				// This renderer seems good, change for it
-				this.renderer( renderer );
+				// Skip the current renderer since it was tested first
+				if (this._renderer && this._renderer.constructor === renderer) {
+					continue;
+				}
 
-				// Don't try other renderer
-				break;
-			}
-		} // end of for
+				// The renderers list may have been changed since the sources solutions have been found
+				if (source.solutions[renderer.name] === undefined) {
+					source.solutions[renderer.name] = renderer.canPlay(source.src, source.type);
+				}
 
-		// No renderer found capable of playing this source
-		if (!canPlay) {
-			// TODO: Trigger another kind of event
-			this.trigger( "error" );
-		}
+				// This renderer seems to be able to play this source
+				if (source.solutions[renderer.name]) {
+					this.renderer(renderer); // Change the renderer for this one
+					return this; // Chaining
+				}
+			} // end of for
+		} // end of while
 
 		return this; // Chaining
 	}, // end of src()
