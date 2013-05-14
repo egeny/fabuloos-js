@@ -33,7 +33,7 @@ function fab(config) {
 		// Then find the id
 		// It might be a string (simply use it after removing the debuting hash)
 		// Or an Element, simply try to retrieve its id
-		id = typeof element === "string" ? element.replace("#", "") : element.id,
+		id = element.replace ? element.replace("#", "") : element.id,
 
 		// Loop specific
 		i = 0, instance;
@@ -50,12 +50,19 @@ function fab(config) {
 } // end of fab()
 
 
-/*!
- * A RegExp used to detect the presence of "_super" in a function's content
- * This RegExp will be used to check if we have to create a facade for a method when inheriting
- * @type {RegExp}
- */
-var rSuper = /xyz/.test(function() { "xyz"; }) ? /\b_super\b/ : /.*/;
+var
+	/*!
+	 * A RegExp used to detect the presence of "_super" in a function's content
+	 * This RegExp will be used to check if we have to create a facade for a method when inheriting
+	 * @type {RegExp}
+	 */
+	rSuper = /xyz/.test(function() { "xyz"; }) ? /\b_super\b/ : /.*/,
+
+	/*!
+	 * A RegExp used to test if an element is <audio> or <video>
+	 * @type {RegExp}
+	 */
+	rMedia = /audio|video/i;
 
 
 /*!
@@ -175,6 +182,15 @@ fab.extend(fab, {
 
 
 	/**
+	 * A simple useful wrapper to cast to array
+	 * Useful when you need to cast a list (arguments, NodeList) to an array
+	 * @type {function}
+	 */
+	toArray: function toArray(array) {
+		return Array.prototype.slice.call(array);
+	},
+
+	/**
 	 * A simple instance counter
 	 * Used to make sure we generate an unique default ID when needed
 	 * @type {number}
@@ -209,14 +225,26 @@ fab.extend({
 			delete this._element;
 		}
 
-		// Define an hash for the renderers' configuration
-		this._config = {};
+		// Define a local config
+		var _config = {
+			// Define the default renderers (must be defined before anything else)
+			renderers: config && config.renderers ? config.renderers : Renderer.supported,
+
+			// Define the element to base on (might be null)
+			element: config ? config.element || config : null
+		}, prop;
+
+		// Copy the config if we've got an object literal
+		if (config && config.constructor === Object) {
+			for (prop in config) {
+				if (config.hasOwnProperty(prop)) {
+					_config[prop] = config[prop];
+				}
+			}
+		}
 
 		// Define the index for this instance in the instances' cache
 		this._index = fab.instances.push(this) - 1;
-
-		// Define the default supported renderers (may be updated when setting the config)
-		this._renderers = Renderer.supported;
 
 		/*!
 		 * Use a closure to create an event trigerrer
@@ -232,13 +260,96 @@ fab.extend({
 		// Define an UID for this instance (used to define a default ID when needed)
 		this._uid = ++fab.UID;
 
-		// Try to find the element to base on
-		this.element(config);
+		// Define the supported renderers (from configuration or use the defaults)
+		this.renderers(_config.renderers);
 
-		// Set the rest of the config (and allow chaining)
-		//return this.set(config);
-		return this;
+		// Try to analyze the sources from the config
+		// Will prevent #element() to search for sources
+		this.sources(_config.src);
+
+		// Try to find the element to base on
+		this.element(_config.element);
+
+		// Clean the config to avoid re-setting
+		delete _config.renderers;
+		delete _config.src;
+		delete _config.element;
+
+		// Set the rest of the config
+		this.set(_config);
+
+		// Define the source if we found one (in the element or the config)
+		this.src(this._sources);
 	}, // end of init()
+
+
+	/**
+	 * Analyze the sources against the renderers
+	 * This method will NOT change the current source, it will only analyze them.
+	 *
+	 * @param {string} value The URL to analyze
+	 * @return {fabuloos} Return the current instance to allow chaining.
+	 *
+	 * @param {object} value An object literal representing the source (might have additional properties).
+	 * @return {fabuloos} Return the current instance to allow chaining.
+	 *
+	 * @param {array} value A list of source to analyze (items can be string or object as described above).
+	 * @return {fabuloos} Return the current instance to allow chaining.
+	 *
+	 * @param {undefined}
+	 * @return {array} Return the analyzed sources.
+	 */
+	sources: function sources(value) {
+		// Act as a getter if there is no arguments 
+		if (value === undefined) {
+			return this._sources;
+		}
+
+		// Reset the sources stack if we there is no sources to test
+		if (value === null || value.length === 0) {
+			this._sources = [];
+			return this; // Chaining
+		}
+
+		var
+			// An array is more convenient (remember to clone existing one in order to keep the original clean)
+			_sources = value.push ? value.slice(0) : [value],
+			_source, source, prop, renderers, renderer; // Loop specific
+
+		// Initialize the sources stack
+		this._sources = [];
+
+		// Loop through sources
+		while ((source = _sources.shift())) {
+			_source = {};
+
+			// If source is an object copy it to keep its values
+			if (source.src) {
+				for (prop in source) {
+					_source[prop] = source[prop];
+				}
+			}
+
+			// Makes sure we have what we need
+			_source.src       = _source.src  || source; // If it wasn't corrected, use the source
+			_source.type      = _source.type || Renderer.guessType(_source.src); // Use or guess the type
+			_source.solutions = {}; // Prepare the solutions hash
+
+			// Copy the renderers
+			renderers = this._renderers.slice(0);
+
+			// Loop through renderers
+			while ((renderer = renderers.shift())) {
+				// Ask the renderer if it can play this source and store the result
+				_source.solutions[renderer.name] = renderer.canPlay(_source.src, _source.type);
+			}
+
+			// Push this source to the stack
+			this._sources.push(_source);
+		}
+
+		return this; // Chaining
+	}, // end of sources()
 
 
 	/**
@@ -278,11 +389,6 @@ fab.extend({
 	 * @param {Element} element The element to enhance (might be `<audio>`, `<video>` or any element).
 	 * @return {fabuloos} Return the current instance to allow chaining.
 	 *
-	 * @param {object} config The configuration to apply.
-	 *   To define which element to base on you must provide an `element` property.
-	 *   Its value can be the same as previous signatures (string or Element).
-	 * @return {fabuloos} Return the current instance to allow chaining.
-	 *
 	 * @param {undefined}
 	 * @return {Element|null} Return the current element reflecting the player.
 	 */
@@ -294,30 +400,67 @@ fab.extend({
 
 		var
 			// @see #fab()
-			elt = config ? config.element || config : {},
-			id  = typeof elt === "string" ? elt.replace("#", "") : elt.id;
+			elt = config || {},
+			id  = elt.replace ? elt.replace("#", "") : elt.id,
+			attributes, attribute, // Loop specific
+			sources, source; // Loop specific
 
 		// If we are changing the element, restore the old one
 		if (this._old) {
 			this.restore();
 		}
 
-		this._id  = id || "fabuloos-" + this._uid; // Set the new id or use the default setted by #restore()
-		this._old = this._element = elt.nodeName ? elt : document.getElementById(id); // Set the current element
+		this._id     = id || "fabuloos-" + this._uid; // Set the new id or use the default setted by #restore()
+		this._old    = this._element = elt.nodeName ? elt : document.getElementById(id); // Set the current element
+		this._config = {}; // Define an hash for the renderers' configuration (reflecting the element)
 
-		// An audio or video element was found, try to read its config
-		/*if (this.element && /audio|video/i.test( this.element.nodeName )) {
-			// Watch for defined attributes
-			for (count = this.element.attributes.length; i < count; i++) {
-				property = this.element.attributes[i].name;
-				value    = this.element.getAttribute( property ); // Use getAttribute to handle browser vendor specific attribute
+		/*!
+		 * If this._element is an <audio> or <video> tag, read its attributes and <source>
+		 * We cannot use this._element instanceof HTMLMediaElement or this._element.canPlayType
+		 * since we have to read the attributes despite the fact the browser support HTMLMediaElement.
+		 * Simply fallback to testing the nodeName against a RegExp
+		 *
+		 * The sources will only be searched if there is no current sources
+		 */
+		if (this._element && rMedia.test(this._element.nodeName) && (!this._sources || this._sources.length === 0)) {
+			attributes = fab.toArray(this._element.attributes);
 
-				// Don't override if the property already exists
-				if (!(property in config) && value) {
-					_config[property] = value;
-				}
+			// Watch for attributes
+			while ((attribute = attributes.shift())) {
+				/*!
+				 * Store the attribute's name and value in _config
+				 * It will be used by renderers to create the right markup
+				 * If the value is falsy, set it to true since an attribute without a value is often considered as true
+				 */
+				this._config[attribute.name] = attribute.value || true;
 			}
-		}*/
+
+			// Check if there was a "src" attribute.
+			// Otherwise look for <source> tags.
+			if (!this._config.src) {
+				this._config.src = []; // Prepare the sources stack
+				sources = fab.toArray(this._element.getElementsByTagName("source")); // Get the tags
+
+				// Loop through each tags
+				while ((source = sources.shift())) {
+					attributes = fab.toArray(source.attributes);
+					source     = {};
+
+					// Loop through each tag's attribute
+					while ((attribute = attributes.shift())) {
+						// Store the attribute's name and value in an hash
+						source[attribute.name] = attribute.value || true;
+					}
+
+					// Add this source to the sources stack
+					this._config.src.push(source);
+				} // end of while
+			} // end of if
+
+			// Analyze the available sources
+			this.sources(this._config.src);
+			delete this._config.src; // Delete the source since we doesn't need it now
+		} // end of if
 
 		return this; // Chaining
 	}, // end of element()
