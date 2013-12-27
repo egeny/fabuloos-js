@@ -52,17 +52,23 @@ function fab(config) {
 
 var
 	/*!
+	 * A RegExp used to test if an element is <audio> or <video>
+	 * @type {RegExp}
+	 */
+	rMedia = /audio|video/i,
+
+	/*!
+	 * A RegExp used to capture the private properties
+	 * @type {RegExp}
+	 */
+	rPrivate = /^_/,
+
+	/*!
 	 * A RegExp used to detect the presence of "_super" in a function's content
 	 * This RegExp will be used to check if we have to create a facade for a method when inheriting
 	 * @type {RegExp}
 	 */
-	rSuper = /xyz/.test(function() { "xyz"; }) ? /\b_super\b/ : /.*/,
-
-	/*!
-	 * A RegExp used to test if an element is <audio> or <video>
-	 * @type {RegExp}
-	 */
-	rMedia = /audio|video/i;
+	rSuper = /xyz/.test(function() { "xyz"; }) ? /\b_super\b/ : /.*/;
 
 
 /*!
@@ -95,12 +101,11 @@ function createFacade(fn, _super) {
  * It will simulate inheritance by giving access to this._super.
  * Be careful when passing more than two arguments since this method
  * add some properties from the last argument, to the first : obj1 <- obj2 <- obj3.
- * @api dev
  *
- * @param {object} obj The object literal to merge to the prototype
+ * @param {object} obj The object to merge to the prototype.
  * @return {undefined} Return nothing.
  *
- * @param {object} ... The objects literal to merge together
+ * @param {object} ... The objects to merge together.
  * @return {undefined} Return nothing.
  *
  * @example
@@ -141,7 +146,7 @@ fab.extend = function extend(obj) {
 	// Loop through arguments from the end
 	for (i = args.length - 1; i > 0; i--) {
 		source = args[i]; // More convenient
-		target = args[i - 1]; // More convenient 
+		target = args[i - 1]; // More convenient
 
 		// Loop through each property to extend
 		for (prop in source) {
@@ -155,20 +160,20 @@ fab.extend = function extend(obj) {
 // Extend the fabuloos' "class" with static members
 fab.extend(fab, {
 	/**
-	 * A cache for all fabuloos' instances
-	 * @api dev
-	 * @type {array}
-	 */
-	instances: [],
-
-
-	/**
 	 * An unique identifier for this class.
 	 * Used to link a DOM element to a JS object.
 	 * @api dev
 	 * TODO: XXX/MOVE
 	 */
 	expando: "fabuloos" + (+new Date()),
+
+
+	/**
+	 * A cache for all fabuloos' instances
+	 * @api dev
+	 * @type {array}
+	 */
+	instances: [],
 
 
 	/**
@@ -184,11 +189,13 @@ fab.extend(fab, {
 	/**
 	 * A simple useful wrapper to cast to array
 	 * Useful when you need to cast a list (arguments, NodeList) to an array
-	 * @type {function}
+	 *
+	 * @param {*} obj The object to cast to array.
+	 * @return {array} Return the object casted.
 	 */
-	toArray: function toArray(array) {
-		return Array.prototype.slice.call(array);
-	},
+	toArray: function toArray(obj) {
+		return Array.prototype.slice.call(obj);
+	}, // end of toArray()
 
 	/**
 	 * A simple instance counter
@@ -203,7 +210,7 @@ fab.extend(fab, {
 	 * @type {string}
 	 */
 	version: "@VERSION"
-});
+}); // end of fab.extend(fab)
 
 
 // Extend the fabuloos' prototype
@@ -212,7 +219,6 @@ fab.extend({
 	 * Initialize an instance
 	 * This method exists so you can extend it and handle specific cases in your plugin.
 	 * Calling this method on an existing instance will reset it.
-	 * @api dev
 	 *
 	 * @see #fab() for signatures
 	 */
@@ -225,16 +231,9 @@ fab.extend({
 			delete this._element;
 		}
 
-		// Define a local config
-		var _config = {
-			// Define the default renderers (must be defined before anything else)
-			renderers: config && config.renderers ? config.renderers : Renderer.supported,
+		var _config = {}, prop;
 
-			// Define the element to base on (might be null)
-			element: config ? config.element || config : null
-		}, prop;
-
-		// Copy the config if we've got an object literal
+		// Create a local copy of config
 		if (config && config.constructor === Object) {
 			for (prop in config) {
 				if (config.hasOwnProperty(prop)) {
@@ -243,51 +242,423 @@ fab.extend({
 			}
 		}
 
-		// Define the index for this instance in the instances' cache
+		// Try to retrieve an element to base on
+		/*!
+		 * Try to retrieve an element to base on
+		 * If none, we're creating a new player (the element should be defined later)
+		 * By setting _config.element we force at least one call to element() who will generate an ID
+		 */
+		_config.element = _config.element || config || null;
+
+		// Add this instance to the instances' cache and retrieve its index
 		this._index = fab.instances.push(this) - 1;
 
-		/*!
-		 * Use a closure to create an event trigerrer
-		 * Used when a renderer have to trigger an event on this instance
-		 * The "this" keyword will be corrected
-		 */
-		this._triggerer = (function(instance) {
-			return function trigerrer() {
-				return instance.trigger.apply(instance, arguments);
-			};
-		}(this));
+		// Create a closure so the renderers will be able to trigger events on the right instance
+		this._triggerer = this.closure("trigger");
 
 		// Define an UID for this instance (used to define a default ID when needed)
 		this._uid = ++fab.UID;
 
-		// Define the supported renderers (from configuration or use the defaults)
-		this.renderers(_config.renderers);
+		// Set the configuration
+		this.config(_config);
 
-		// Try to analyze the sources from the config
-		// Will prevent #element() to search for sources
-		this.sources(_config.src);
-
-		// Try to find the element to base on
-		this.element(_config.element);
-
-		// Clean the config to avoid re-setting
-		delete _config.renderers;
-		delete _config.src;
-		delete _config.element;
-
-		// Set the rest of the config
-		this.set(_config);
-
-		// Define the source if we found one (in the element or the config)
-		this.src(this._sources);
+		return this; // Chaining
 	}, // end of init()
+
+
+	/**
+	 * Attach all listeners to the renderer
+	 *
+	 * @param {undefined}
+	 * @return {fabuloos} Return the current instance to allow chaining.
+	 */
+	attach: function attach() {
+		if (this._renderer) {
+			// Allow the renderer to trigger
+			this._renderer._triggerer = this._triggerer;
+		}
+
+		return this; // Chaining
+	}, // end of attach()
+
+
+	/**
+	 * Create a closure to launch a method
+	 *
+	 * @param {string} method The method to launch.
+	 * @param {*} [...] The other arguments to pass to the method.
+	 * @return {function} Return a closure which will call the method.
+	 *
+	 * @example
+	 *   var player = fab();
+	 *   player.on("ended", player.closure("src", "http://fabuloos.org/video.mp4")); // Automatically change the source when the first is finished
+	 *   player.on("ended", player.closure("currentTime", 0)); // Rewind when the media end
+	 *   fab.bind(btn, "click", player.closure("play")); // Bind a button to launch a method
+	 */
+	closure: function closure(method) {
+		var
+			that = this, // Save a reference to this instance
+			args = fab.toArray(arguments); // Convert arguments to a real array
+
+		// Remove the first argument (the method name)
+		args.shift();
+
+		return function closure() {
+			// Call the method (if it exists), pass the arguments (args and these arguments)
+			return that[method] ? that[method].apply(that, args.concat(fab.toArray(arguments))) : undefined;
+		};
+	}, // end of closure()
+
+
+	/**
+	 * Launch a method on the instance
+	 *
+	 * @param {string} method The method to launch.
+	 * @param {*} [...] The other arguments to pass to the method.
+	 * @return {*} Return the result of the method or undefined if the method doesn't exists.
+	 *
+	 * @example
+	 *   var player = fab("media");
+	 *   player.cmd("pause"); // Return player to allow chaining
+	 *   player.cmd("paused"); // Return true or false
+	 *   player.cmd("src", "http://fabuloos.org/video.mp4"); // Return player to allow chaining
+	 *   player.cmd("foo"); // Return undefined
+	 */
+	cmd: function cmd(method) {
+		var args = fab.toArray(arguments); // Convert arguments to a real array
+		args.shift(); // Remove the first argument (the method name)
+
+		return this[method] ? this[method].apply(this, args) : undefined;
+	}, // end of cmd()
+
+
+	/**
+	 * An alias for the #set() method
+	 */
+	config: function config() {
+		return this.set.apply(this, arguments);
+	}, // end of config()
+
+
+	/**
+	 * Destroy the instance
+	 * Will restore the initial element and remove the instance from the cache.
+	 *
+	 * @param {undefined}
+	 * @return {null} Return `null` to stop chaining.
+	 */
+	destroy: function destroy() {
+		var instance, i = this._index, prop; // Loop specific
+
+		// Restore the old element (if any)
+		this.restore();
+
+		// Remove this instance from the caches
+		fab.instances.splice(this._index, 1);
+
+		// Correct the indexes of the instances following the one we just removed
+		while ((instance = fab.instances[i])) {
+			instance._index = i++;
+		}
+
+		// Delete all private properties
+		for (prop in this) {
+			if (rPrivate.test(prop)) {
+				delete this[prop];
+			}
+		}
+
+		// It is more convenient to return null (end chaining)
+		return null;
+	}, // end of destroy()
+
+
+	/**
+	 * Detach all listeners from the renderer
+	 *
+	 * @param {undefined}
+	 * @returns {fabuloos} Return the current instance to allow chaining.
+	 */
+	detach: function detach() {
+		if (this._renderer) {
+			// Disallow the renderer to trigger
+			this._renderer._triggerer = null;
+		}
+
+		return this; // Chaining
+	}, // end of detach()
+
+
+	/**
+	 * Getter and setter for the current element
+	 * Get the element reflecting the player (depend on the renderer in use).
+	 * Set the element to replace with a player.
+	 *
+	 * @param {string} id The ID attribute of the element to enhance (might be `<audio>`, `<video>` or any element).
+	 * @return {fabuloos} Return the current instance to allow chaining.
+	 *
+	 * @param {Element} element The element to enhance (might be `<audio>`, `<video>` or any element).
+	 * @return {fabuloos} Return the current instance to allow chaining.
+	 *
+	 * @param {undefined}
+	 * @return {Element|null} Return the current element reflecting the player.
+	 */
+	element: function element(config) {
+		// Act as getter if there is no arguments and if there is an element (might be null)
+		if (config === undefined && "_element" in this) {
+			return this._element;
+		}
+
+		var
+			// @see #fab()
+			elt = config || {},
+			id  = elt.replace ? elt.replace("#", "") : elt.id,
+			attributes, attribute, // Loop specific
+			sources, source; // Loop specific
+
+		// If we are changing the element, restore the old one
+		if (this._old) {
+			this.restore();
+		}
+
+		this._id     = id || "fabuloos-" + this._uid; // Set the new id or use the default setted by #restore()
+		this._old    = this._element = elt.nodeName ? elt : document.getElementById(id); // Set the current element
+		this._config = {}; // Define an hash for the renderers' configuration (reflecting the element)
+
+		/*!
+		 * If this._element is an <audio> or <video> tag, read its attributes and <source>
+		 * We cannot use this._element instanceof HTMLMediaElement or this._element.canPlayType
+		 * since we have to read the attributes despite the fact the browser support HTMLMediaElement.
+		 * Simply fallback to testing the nodeName against a RegExp
+		 *
+		 * The sources will only be searched if there is no current sources
+		 */
+		if (this._element && rMedia.test(this._element.nodeName)/* && (!this._sources || this._sources.length === 0)*/) {
+			attributes = fab.toArray(this._element.attributes);
+
+			// Watch for attributes
+			while ((attribute = attributes.shift())) {
+				/*!
+				 * Store the attribute's name and value in _config
+				 * It will be used by renderers to create the right markup
+				 * If the value is falsy, set it to true since an attribute without a value is often considered as true
+				 */
+				this._config[attribute.name] = attribute.value || true;
+			}
+
+			// Check if there was a "src" attribute.
+			// Otherwise look for <source> tags.
+			if (!this._config.src) {
+				this._config.src = []; // Prepare the sources stack
+				sources = fab.toArray(this._element.getElementsByTagName("source")); // Get the tags
+
+				// Loop through each tags
+				while ((source = sources.shift())) {
+					attributes = fab.toArray(source.attributes);
+					source     = {};
+
+					// Loop through each tag's attribute
+					while ((attribute = attributes.shift())) {
+						// Store the attribute's name and value in an hash
+						source[attribute.name] = attribute.value || true;
+					}
+
+					// Add this source to the sources stack
+					this._config.src.push(source);
+				} // end of while
+			} // end of if
+
+			// Analyze the available sources
+			this.src(this._config.src);
+			delete this._config.src; // Delete the source since we doesn't need it now
+		} // end of if
+
+		return this; // Chaining
+	}, // end of element()
+
+
+	/**
+	 * Change or get the renderer
+	 *
+	 * @param {Renderer} renderer The new renderer to use.
+	 * @return {fabuloos} Return the current instance to allow chaining.
+	 *
+	 * @param {undefined}
+	 * @return {Renderer|undefined} Return the current renderer.
+	 */
+	renderer: function renderer(_renderer) {
+		// No renderer received, acting like a getter
+		if (!_renderer) {
+			return this._renderer;
+		}
+
+		// Check if we correctly received a renderer
+		if (!_renderer.canPlay) {
+			throw "This renderer isn't valid.";
+		}
+
+		// Check if the renderer is supported before creating it
+		if (!_renderer.isSupported) {
+			// TODO: Trigger a better event
+			return this.trigger("error");
+		}
+
+		// Makes sure the renderer will receive an ID and a size (mandatory for most of the renderers)
+		this._config.id     = this._id;
+		this._config.width  = this._config.width  || 0;
+		this._config.height = this._config.height || 0;
+
+		// Detach all listeners
+		this.detach();
+
+		// Destroy the current renderer
+		if (this._renderer) {
+			this._renderer.destroy();
+		}
+
+		// Create the new renderer
+		this._renderer = new _renderer(this._config);
+
+		// Attach all listeners
+		this.attach();
+
+		// Replace the old renderer markup
+		this._renderer.replace(this._element);
+
+		// Keep a reference of the element
+		this._element = this._renderer.element;
+
+		return this; // Chaining
+	}, // end of renderer()
+
+
+	/**
+	 * Define the list of supported renderers
+	 *
+	 * @params {array} renderers The renderers to define as available.
+	 * @return {fabuloos} Return the current instance to allow chaining.
+	 *
+	 * @param {Renderer} renderer The only renderer to define as available.
+	 * @return {fabuloos} Return the current instance to allow chaining.
+	 *
+	 * @param {undefined}
+	 * @return {array|undefined} Return the available renderers.
+	 */
+	renderers: function renderers(_renderers) {
+		// Act as a getter if there is no arguments
+		if (!_renderers) {
+			return this._renderers;
+		}
+
+		// Don't bother checking supported renderers if we received the default supported renderers
+		if (_renderers === Renderer.supported) {
+			this._renderers = Renderer.supported;
+			return this; // Chaining
+		}
+
+		var
+			// List of supported renderers (copying the received arguments)
+			supported = _renderers.push ? _renderers.slice(0) : [_renderers],
+			i = 0, renderer; // Loop specific
+
+		// Loop through each renderers to test them
+		while((renderer = supported[i])) {
+			// Test the renderer and remove it if unsupported
+			i += "isSupported" in renderer && renderer.isSupported ? 1 : (supported.splice(i, 1)).length - 1;
+		}
+
+		// Save the supported renderers list in the config
+		this._renderers = supported;
+
+		return this; // Chaining
+	}, // end of renderers()
+
+
+	/**
+	 * Restore the initial element
+	 *
+	 * @param {undefined}
+	 * @return {fabuloos} Return the current instance to allow chaining.
+	 */
+	restore: function restore() {
+		// Replace the element with the old one if necessary
+		if (this._element && this._old && this._element !== this._old) {
+			this._element.parentNode.replaceChild(this._old, this._element);
+		}
+
+		// Set a default id since this instance isn't related to any element
+		this._id  = "fabuloos-" + this._uid;
+		this._old = this._element = null;
+
+		return this; // Chaining
+	}, // end of restore()
+
+
+	/**
+	 * Set a player's property
+	 * You can pass a key/value pair or an hash to set multiple properties.
+	 *
+	 * @param {string} property The property to set.
+	 * @param {*} value The new property's value.
+	 * @return {fabuloos} Return the current instance to allow chaining.
+	 *
+	 * @param {object} obj An object literal of properties and their values.
+	 * @return {fabuloos} Return the current instance to allow chaining.
+	 *
+	 * @example
+	 * <code>
+	 *   fab().set("autoplay", true); // Setting the "autoplay" property to "true"
+	 *   fab().set({
+	 *     width: 720,
+	 *     autoplay: true
+	 *   });
+	 * </code>
+	 */
+	set: function set(property, value) {
+		var obj = arguments[0] || {}, src;
+
+		// Handle hash mode
+		if (arguments.length === 1) {
+			// Loop through each property to set its value
+			// TODO: prioritize
+			for (property in obj) {
+				// Always set the source last
+				/*if (property === "src") {
+					src = obj.src;
+					continue;
+				}*/
+
+				// Call itself to handle properly setting property/value
+				this.set(property, obj[property]);
+			}
+
+			// Set the source (if any)
+			//this.src(src);
+
+			return this; // Allow chaining
+		}
+
+		// Prefer specialized method having the property's name
+		if (typeof this[property] === "function") {
+			this[property](value);
+		} else if (new RegExp(property).test(setterProperties)) {
+			// If we're allowed to set this property define the property and value in the _config hash
+			// Store the value corrected by the renderer (if any)
+			this._config[property] = this._renderer ? this._renderer.set(property, value) : value;
+		} else {
+			// In the other cases store the value in the instance, prefixed with an underscore
+			this["_" + property] = value;
+		}
+
+		return this; // Chaining
+	}, // end of set()
 
 
 	/**
 	 * Analyze the sources against the renderers
 	 * This method will NOT change the current source, it will only analyze them.
 	 *
-	 * @param {string} value The URL to analyze
+	 * @param {string} value The URL to analyze.
 	 * @return {fabuloos} Return the current instance to allow chaining.
 	 *
 	 * @param {object} value An object literal representing the source (might have additional properties).
@@ -300,12 +671,17 @@ fab.extend({
 	 * @return {array} Return the analyzed sources.
 	 */
 	sources: function sources(value) {
-		// Act as a getter if there is no arguments 
+		// Act as a getter if there is no arguments
 		if (value === undefined) {
 			return this._sources;
 		}
 
-		// Reset the sources stack if we there is no sources to test
+		// The supported renderer may not be initialized yet
+		if (this._renderers === undefined) {
+			this.renderers(Renderer.supported);
+		}
+
+		// Reset the sources stack if there is no sources to test
 		if (value === null || value.length === 0) {
 			this._sources = [];
 			return this; // Chaining
@@ -353,137 +729,106 @@ fab.extend({
 
 
 	/**
-	 * Destroy the instance
-	 * Will restore the initial element and remove the instance from the cache.
+	 * Get the source or set a new source
+	 * This will change the renderer (if necessary) and define the source to play.
+	 * #sources() will only find the solutions available for the given source.
+	 * #src() will call #sources() internally if necessary and define the source.
+	 *
+	 * @param {string} value The URL of the new source.
+	 * @return {fabuloos} Return the current instance to allow chaining.
+	 *
+	 * @param {object} value An object literal representing the new source (might have additional properties).
+	 * @return {fabuloos} Return the current instance to allow chaining.
+	 *
+	 * @param {array} value A list of possible sources (items can be string or object as described above).
+	 * @return {fabuloos} Return the current instance to allow chaining.
 	 *
 	 * @param {undefined}
-	 * @return {null}
+	 * @return {string} Return the current source.
+	 *
+	 * @example
+	 *   fab().src("http://fabuloos.org/video.mp4"); // Will find a renderer for this source, create it and define the source
+	 *
+	 *   // You can help the algorith by defining the MIME type (sometime there is no extension on the URL)
+	 *   fab().src({
+	 *     src: "http://fabuloos.org/video.mp4"
+	 *     type: "video/mp4"
+	 *   });
+	 *
+	 *   // Define the list of possible sources (give more chance to be cross-platform)
+	 *   fab().src([
+	 *     "http://fabuloos.org/video.mp4",
+	 *     "http://fabuloos.org/video.ogv"
+	 *   ]);
+	 *
+	 *   // Define the list of possible sources, give some hints for the algorithm
+	 *   fab().src([
+	 *     { src: "http://fabuloos.org/video.mp4", type: "video/mp4" },
+	 *     { src: "http://fabuloos.org/video.ogv", type: "video/ogv" }
+	 *   ]);
 	 */
-	destroy: function destroy() {
-		var instance, i = this._index; // Loop specific
-
-		// Restore the old element (if any)
-		this.restore();
-
-		// Remove this instance from the caches
-		fab.instances.splice(this._index, 1);
-
-		// Correct the indexes of the instances following the one we just removed
-		while ((instance = fab.instances[i])) {
-			instance._index = i++;
+	src: function src(value) {
+		// Acting as a getter
+		if (value === undefined) {
+			return this.get("src");
 		}
 
-		// It is more convenient to return null (end chaining)
-		return null;
-	}, // end of destroy()
-
-
-	/**
-	 * Getter and setter for the current element
-	 * Get the element reflecting the player (depend on the renderer in use).
-	 * Set the element to replace with a player.
-	 *
-	 * @param {string} id The ID attribute of the element to enhance (might be `<audio>`, `<video>` or any element).
-	 * @return {fabuloos} Return the current instance to allow chaining.
-	 *
-	 * @param {Element} element The element to enhance (might be `<audio>`, `<video>` or any element).
-	 * @return {fabuloos} Return the current instance to allow chaining.
-	 *
-	 * @param {undefined}
-	 * @return {Element|null} Return the current element reflecting the player.
-	 */
-	element: function element(config) {
-		// Act as getter if there is no arguments and if there is an element (might be null)
-		if (config === undefined && "_element" in this) {
-			return this._element;
+		// Expand the sources if necessary
+		if (value !== this._sources) {
+			this.sources(value); // Will find the source's type and ask the renderers if they can play it
 		}
 
 		var
-			// @see #fab()
-			elt = config || {},
-			id  = elt.replace ? elt.replace("#", "") : elt.id,
-			attributes, attribute, // Loop specific
-			sources, source; // Loop specific
+			i = 0, source, // Loop specific
+			j = 0, renderer, count = this._renderers.length; // Loop specific
 
-		// If we are changing the element, restore the old one
-		if (this._old) {
-			this.restore();
-		}
-
-		this._id     = id || "fabuloos-" + this._uid; // Set the new id or use the default setted by #restore()
-		this._old    = this._element = elt.nodeName ? elt : document.getElementById(id); // Set the current element
-		this._config = {}; // Define an hash for the renderers' configuration (reflecting the element)
-
-		/*!
-		 * If this._element is an <audio> or <video> tag, read its attributes and <source>
-		 * We cannot use this._element instanceof HTMLMediaElement or this._element.canPlayType
-		 * since we have to read the attributes despite the fact the browser support HTMLMediaElement.
-		 * Simply fallback to testing the nodeName against a RegExp
-		 *
-		 * The sources will only be searched if there is no current sources
-		 */
-		if (this._element && rMedia.test(this._element.nodeName) && (!this._sources || this._sources.length === 0)) {
-			attributes = fab.toArray(this._element.attributes);
-
-			// Watch for attributes
-			while ((attribute = attributes.shift())) {
-				/*!
-				 * Store the attribute's name and value in _config
-				 * It will be used by renderers to create the right markup
-				 * If the value is falsy, set it to true since an attribute without a value is often considered as true
-				 */
-				this._config[attribute.name] = attribute.value || true;
+		// Loop through each sources to find a playable one
+		while ((source = this._sources[i++])) {
+			// Test if the current renderer (if any) can handle this source
+			if (this._renderer && source.solutions[this._renderer.constructor.name]) {
+				this._renderer.set("src", source.src); // Simply ask him to change the source
+				return this; // Chaining
 			}
 
-			// Check if there was a "src" attribute.
-			// Otherwise look for <source> tags.
-			if (!this._config.src) {
-				this._config.src = []; // Prepare the sources stack
-				sources = fab.toArray(this._element.getElementsByTagName("source")); // Get the tags
+			// Loop through each active renderer
+			for (j = 0; j < count; j++) {
+				renderer = this._renderers[j]; // More convenient
 
-				// Loop through each tags
-				while ((source = sources.shift())) {
-					attributes = fab.toArray(source.attributes);
-					source     = {};
+				// Skip the current renderer since it was tested first
+				if (this._renderer && this._renderer.constructor === renderer) {
+					continue;
+				}
 
-					// Loop through each tag's attribute
-					while ((attribute = attributes.shift())) {
-						// Store the attribute's name and value in an hash
-						source[attribute.name] = attribute.value || true;
-					}
+				// The renderers list may have been changed since the sources solutions have been found
+				if (source.solutions[renderer.name] === undefined) {
+					source.solutions[renderer.name] = renderer.canPlay(source.src, source.type);
+				}
 
-					// Add this source to the sources stack
-					this._config.src.push(source);
-				} // end of while
-			} // end of if
-
-			// Analyze the available sources
-			this.sources(this._config.src);
-			delete this._config.src; // Delete the source since we doesn't need it now
-		} // end of if
+				// This renderer seems to be able to play this source
+				if (source.solutions[renderer.name]) {
+					this.renderer(renderer); // Change the renderer for this one
+					return this; // Chaining
+				}
+			} // end of for
+		} // end of while
 
 		return this; // Chaining
-	}, // end of element()
+	}, // end of src()
 
 
 	/**
-	 * Restore the initial element
+	 * Trigger the listeners for a type
+	 * You can trigger some types at once by separating them with a space.
 	 *
-	 * @param {undefined}
+	 * @param {string} type The type(s) of event to trigger
 	 * @return {fabuloos} Return the current instance to allow chaining.
 	 */
-	restore: function restore() {
-		// Replace the element with the old one if necessary
-		if (this._element && this._old && this._element !== this._old) {
-			this._element.parentNode.replaceChild(this._old, this._element);
-		}
-
-		// Set a default id since this instance isn't related to any element
-		this._id  = "fabuloos-" + this._uid;
-		this._old = this._element = null;
+	trigger: function trigger(type) {
+		// Trigger!
+		fab.event.trigger(this, type);
 
 		return this; // Chaining
-	} // end of restore()
+	} // end of trigger()
 }); // end of fab.extend()
 
 // Expose
@@ -497,7 +842,7 @@ window.fabuloos = window.fab = fab;
  *
  * @returns {Exception} A new Exception instance
  */
-function Exception( code ) {
+function Exception(code) {
 	this.name = "fabuloos error";
 	this.code = code;
 
