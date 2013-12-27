@@ -1,40 +1,12 @@
-/*global ActiveXObject */
-
-var
-	/*!
-	 * A RegExp used to extract the file extension from an URL
-	 * @type {RegExp}
-	 */
-	rExt = /\.([\w\d])+(?=\/|\?|#|$)/g,
-
-	/*!
-	 * A RegExp used to append type on multiple MIME types
-	 * @see #guessType()
-	 * @type {RegExp}
-	 */
-	rAppendType = /([^,]+)/g;
-
-
 /**
  * The base Renderer class
  * @abstract @constructor
- *
- * @returns {Renderer} A new Renderer instance
  */
 function Renderer() {}
 
 
 /**
- * An instance cache, used to retrieve an instance from a plugin
- * @static
- * @type {object}
- */
-Renderer.instances = {};
-
-
-/**
  * An hash of MIME types associated to extensions
- * @static
  * @type {object}
  */
 Renderer.mimes = {
@@ -66,483 +38,188 @@ Renderer.mimes = {
 };
 
 
-/**
- * A list of currently supported renderers
- * @static
- * @type {array}
- */
-Renderer.supported = [];
+var
+	/*!
+	 * A RegExp used to extract the file extension from an URL
+	 * @type {RegExp}
+	 */
+	rExt = /\.([\w\d])+(?=\/|\?|#|$)/g,
+
+	/*!
+	 * A RegExp to retrieve a function's name
+	 * @type {RegExp}
+	 */
+	rFunction = /function (\w+)/;
 
 
 /**
- * Renderer initialization
- * @static @function
+ * Extend some objects or the this' prototype
+ * Be careful when passing more than two arguments since this method
+ * add some properties from the last argument, to the first : obj1 <- obj2 <- obj3.
  *
- * @param {object} instance The instance to extend
+ * @param {object} obj The object to merge to the prototype.
+ * @return {undefined} Return nothing.
+ *
+ * @param {object} ... The objects to merge together.
+ * @return {undefined} Return nothing.
  */
-Renderer.init = function( instance ) {
+Renderer.extend = function extend(obj) {
 	var
-		klass     = instance.constructor, // Retrieve the child class constructor
-		instances = Renderer.instances[klass.name]; // Retrieve the class' instances cache
+		args = Array.prototype.slice.call(arguments), // Cast arguments to array
+		i, source, target, prop; // Loop specific
 
-	// Initialize the instances cache if it doesn't exists
-	if (!instances) {
-		// Save a fake array as static reference in the class and instance cache
-		Renderer.instances[klass.name] = klass.instances = instances = { length: 0 };
+	// If we have only one argument we want to augment the prototype
+	if (args.length === 1) {
+		args.unshift(this.prototype);
 	}
 
-	// Handle undefined config
-	instance.config = instance.config || {};
+	// Loop through arguments from the end
+	for (i = args.length - 1; i > 0; i--) {
+		source = args[i]; // More convenient
+		target = args[i - 1]; // More convenient
 
-	// Makes sure we have an id
-	instance.config.id = instance.config.id || klass.name + "-" + (instances.length + 1);
-
-	// Store the new instance or retrieve from cache
-	if (!instances[instance.config.id]) {
-		instances[instance.config.id] = instance;
-		instances.length++;
-	} else {
-		return instances[instance.config.id];
-	}
-
-	// Initialize the event handler
-	instance.handler = null;
-
-	// Initialize a cache for event and property (very useful when plugin aren't ready)
-	instance.cache = {
-		events:     {},
-		properties: {}
-	};
-
-	return instance;
-}; // end of Renderer.init()
-
-
-/**
- * Check if a given URL is readable by this renderer
- * @static
- *
- * @param {string} url The url to check
- * @param {string|array} type The MIME type(s) associated to this URL
- * @return {string} Return "probably" or "maybe" if the MIME type is supported, "" (empty string) otherwise
- */
-Renderer.canPlay = function canPlay(url, type) {
-	var
-		// Get or guess the MIME type (we can receive "undefined", treat it like a MIME)
-		mime = arguments.length === 2 ? type : Renderer.guessType(url),
-		i = 0, count, // Loop specific
-		result, canPlayType = ""; // Prepare the result (default to "" if we doesn't have any MIME type)
-
-	// Work only with array, more convenient
-	mime = mime || []; // Don't bother to loop if we doesn't have a MIME type
-	mime = mime.push ? mime : [mime]; // "cast" regular MIME type to array
-
-	// Loop through MIME types (for some extensions we can have multiple MIME types)
-	for (count = mime.length; i < count; i++) {
-		// Test the MIME type
-		result = this.canPlayType(mime[i]);
-
-		// Ouh, nice result, exit
-		if (result === "probably") {
-			return result;
+		// Loop through each property to extend
+		for (prop in source) {
+			// Override the target's value with the new value or a facade function if necessary
+			target[prop] = source[prop];
 		}
-
-		// Meh. Continue in case we found a probably
-		canPlayType = canPlayType || result;
-	}
-
-	// Return the result (may be "", "maybe" or "probably")
-	return canPlayType;
-}, // end of Renderer.canPlay()
-
-
-/**
- * Check if a given MIME type is readable by this renderer
- * @static @function
- *
- * @param {string} type The MIME type to check
- *
- * @returns {string} Returns "maybe" or "probably" is the MIME type is supported, "" otherwise
- */
-Renderer.canPlayType = function( type ) {
-	return this.types[type] || "";
-}; // end of Renderer.canPlayType()
-
-
-/**
- * Utility function to create a closure to call a method on the element
- * @static @function
- *
- * @param {string} method The method name to call
- *
- * @returns A closure
- */
-Renderer.createShorthand = function( method ) {
-	return function() {
-		return (this.element && typeof this.element[method] === "function") ? this.element[method].apply( this.element, arguments ) : undefined;
-	};
-}; // end of Renderer.createShorthand()
-
-
-/**
- * Utility function to extend an object with another object.
- * Overwrite existing properties.
- * @static @function
- *
- * @param {object} target The object to be extended
- * @param {object} source The source object
- */
-Renderer.extend = function( target, source ) {
-	for (var prop in source) {
-		target[prop] = source[prop];
 	}
 }; // end of Renderer.extend()
 
 
-/**
- * Utility function to format an object to a string
- * @static @function
- *
- * @param {string} mode The mode to format to
- * @param {object} obj The object to format to the given mode
- *
- * @returns {string} The formated object as string
- *
- * @example
- *   <code>Renderer.formatTo("attribute", { id: "foo", width: 300 }) // id="foo" width="300"</code>
- *   <code>Renderer.formatTo("param", { id: "foo" }); // &lt;param name="id" value="foo" /&gt;</code>
- */
-Renderer.formatTo = function( mode, obj ) {
-	var
-		config = {
-			attribute:  ['%attribute%="%value%"', " "],
-			param:      ['<param name="%param%" value="%value%" />', "\n"],
-			flashvars:  ['%flashvars%=%value%', "&"],
-			initparams: ['%initparams%=%value%', ","]
-		},
-		template = config[mode][0],
-		glue     = config[mode][1],
-		output   = [],
-		key, value;
-
-	for (key in obj) {
-		// Ignore "params" key
-		if (key === "params") {
-			continue;
-		}
-
-		// Get the value or format it if it's an object
-		value = (typeof obj[key] === "object") ? Renderer.formatTo( key, obj[key] ) : obj[key];
-
-		// Handle exceptions for boolean values on attributes
-		if (mode === "attribute" && typeof value === "boolean") {
-			if (value === true) {
-				output.push( key ); // Keep autoplay/controls/etc. without value
-			}
-			continue;
-		}
-
-		// Format using the template
-		output.push( template.replace( "%" + mode + "%", key ).replace( "%value%", value ) );
-	}
-
-	return output.join( glue );
-}; // end of Renderer.formatTo()
-
-
-/**
- * Try to guess the MIME type based on an extension or an URL
- * @static
- *
- * @param {string} ext The extension or URL to use to guess MIME type
- * @return {string|array|false} Returns a string or an array of MIME types. undefined if the extension is unknown.
- */
-Renderer.guessType = function guessType(ext) {
-	var type, key;
-
-	// Treat ext as full URL if its length is more than 5 characters
-	if (ext && ext.length > 5) {
-		ext = ext.match(rExt); // Get the probable extensions
-		ext = ext ? ext[ext.length - 1].substring(1) : ""; // Keep the last one
-	}
-
-	// Exit if we don't have an extension to test
-	if (!ext) { return; }
-
-	// Transforming the extension to a RegExp, easier to find in Renderer.mimes' keys
-	ext = new RegExp(ext, "i");
-
-	for (type in Renderer.mimes) {
-		for (key in Renderer.mimes[type]) {
-			// Check if this key is the extension we're looking for
-			if (ext.test(key)) {
-				// Check if the MIME is an array
-				if (Renderer.mimes[type][key].push) {
-					// Before returning, append the type in front of MIMEs
-					return Renderer.mimes[type][key].join().replace(rAppendType, type + "/$1").split(",");
-				} else {
-					return type + "/" + Renderer.mimes[type][key];
-				}
-			}
-		} // end of for (ext in Renderer.mimes[type])
-	} // end of for (type in Renderer.mimes)
-
-	// Return undefined if extension is unknown
-	return;
-}; // end of Renderer.guessType()
-
-
-/**
- * Utility function to check if a plugin is supported
- * @static @function
- *
- * @param {object} pluginInfo The plugin info (minVersion, plugin name and activeX name)
- *
- * @returns {boolean} Is this plugin supported?
- */
-Renderer.isPluginSupported = function( pluginInfo, versionSwitcher ) {
-	var
-		version, // The plugin version
-		minVersion = pluginInfo[versionSwitcher] || pluginInfo.minVersion, // The min plugin version
-		rVersion = /\d+/g, // A regexp to retrieve version
-		ax, // ActiveX
-		diff, // The difference between two version, used to check versions
-		i, count; // Loop specific
-
-	// Check if the plugin exists on good browsers
-	if (navigator.plugins && navigator.plugins[pluginInfo.plugin]) {
-		// It seems. Get the description (include the version)
-		version = navigator.plugins[pluginInfo.plugin].description;
-	} else if (window.ActiveXObject) {
-		// Bad browsers use ActiveX, use a try/catch to avoid error when plugin doesn't exists
-		try {
-			ax = new ActiveXObject( pluginInfo.activex );
-
-			// Check if this ActiveX has a IsVersionSupported
-			try {
-				// IsVersionSupported seems to be an ActiveX function
-				if (typeof ax.IsVersionSupported( minVersion ) === "boolean") {
-					return ax.IsVersionSupported( minVersion );
-				}
-			} catch (e2) {}
-
-			// Otherwise try to retrieve the version
-			version = ax.getVariable( "$version" );
-		} catch (e1) {}
-	}
-
-	// A version was found
-	if (version) {
-		// Split the versions
-		version    = version.match( rVersion );
-		minVersion = minVersion.match( rVersion );
-
-		// Loop through the minVersion to check with the current installed
-		for (i = 0, count = minVersion.length; i < count; i++) {
-			// Calculate the difference between installed and target version
-			diff = (parseInt(version[i], 10) || 0) - (parseInt(minVersion[i], 10) || 0);
-
-			// The installed match the target version, continue to next version number
-			if (diff === 0) {
-				continue;
-			}
-
-			// The installed doesn't match, so it can be greater or lower, just return this result
-			return (diff > 0);
-		}
-
-		return true; // The minVersion === version
-	}
-
-	return false; // No version found or plugin uninstalled
-}; // end of Renderer.isPluginSupported()
-
-
-/**
- * Utility function to merge objects
- * @static @function
- *
- * @param {object} ... The objects to merge
- *
- * @returns {object} Returns a new object (don't overwrite the properties if exists)
- */
-Renderer.merge = function() {
-	var
-		output = {}, // Prepare the output
-		i = 0, count = arguments.length, key; // Loop specific
-
-	// Loop through each arguments
-	for (; i < count; i++) {
-		// Loop through each arguments' properties
-		for (key in arguments[i]) {
-			// Add the value if the key doesn't exists
-			if (!output.hasOwnProperty( key )) {
-				output[key] = arguments[i][key];
-			} else if (typeof output[key] === "object") {
-				// If the key exists, check if we have to call recursively
-				output[key] = Renderer.merge( output[key], arguments[i][key] );
-			}
-		}
-	}
-
-	return output;
-}; // end of Renderer.merge()
-
-
-Renderer.prototype = {
+// Extend the Renderer's "class" with static members
+Renderer.extend(Renderer, {
 	/**
-	 * A flag to check if this renderer is ready (wait for plugin initialization)
-	 * @type {boolean}
-	 */
-	isReady: false,
-
-
-	/**
-	 * Ask the element to listen for an event type. When the event will be triggered it will call this.handler.
-	 * @function
+	 * Check if a given URL is readable by this renderer
 	 *
-	 * @param {string} type The event type to listen
+	 * @param {string} url The url to check
+	 * @param {string|array} type The MIME type(s) associated to this URL
+	 * @return {string} Return "probably" or "maybe" if the MIME type is supported, "" (empty string) otherwise
 	 */
-	bind: function( type) {
-		// Ask the element to listen only when it wasn't already listening
-		if (!this.cache.events[type] && this.element && this.element.bind) {
-			this.element.bind( type );
-		}
-
-		// Remember we're listening for this type
-		this.cache.events[type] = true;
-	}, // end of bind()
-
-
-	/**
-	 * Destroy an instance (remove from cache)
-	 * @function
-	 */
-	destroy: function() {
-		var cache = Renderer.instances[this.constructor.name];
-		if (cache[this.config.id]) {
-			delete cache[this.config.id];
-			cache.length--;
-		}
-	}, // end of destroy()
-
-
-	/**
-	 * Dispatch an event type
-	 * @function
-	 *
-	 * @param {string|object} event The event (object) or event type (string) to dispatch
-	 */
-	dispatch: function( event ) {
-		// Correcting the event object in case we receive a string
-		event = typeof event === "string" ? { type: event } : event;
-
-		// If we have an handler we can call it!
-		if (this.handler) {
-			this.handler( event );
-		}
-	}, // end of dispatch()
-
-
-	/**
-	 * Get a property's value
-	 * @function
-	 *
-	 * @param {string} property The property name
-	 *
-	 * @returns The property's value or undefined if the property or element doesn't exists
-	 */
-	get: function( property ) {
-		// Width and height must be found in a specific way
-		if (property === "width" || property === "height") {
-			// Don't bother if we haven't any element to measure
-			if (!this.element) { return 0; }
-
-			var value = window.getComputedStyle ?
-				// Pass a second argument (null) to getComputedStyle for compatibility reasons
-				// @see https://developer.mozilla.org/en-US/docs/DOM/window.getComputedStyle
-				window.getComputedStyle( this.element, null ).getPropertyValue( property ) :
-				// Use the scrollWidth/scrollHeight property since it is calculated in a different way in IE
-				this.element["scroll" + property.charAt( 0 ).toUpperCase() + property.slice( 1 )];
-
-			// parseFloat to avoid units (px, em, etc.)
-			return parseFloat( value );
-		}
-
-		return this.element ? ((typeof this.element.get === "function") ? this.element.get( property ) : this.element[property]) : undefined;
-	}, // end of get()
-
-
-	/**
-	 * A method called by a plugin when ready
-	 * @function
-	 */
-	ready: function() {
-		// This renderer instance is ready
-		this.isReady = true;
-
+	canPlay: function canPlay(url, type) {
 		var
-			cache = this.cache, // Retrieve the events and properties cache
-			type, key; // Loop specific
+			// Get or guess the MIME type (we can receive "undefined", treat it like a MIME)
+			mime = arguments.length === 2 ? type : Renderer.guessType(url),
+			i = 0, count, // Loop specific
+			result, canPlayType = ""; // Prepare the result (default to "" if we doesn't have any MIME type)
 
-		// Ask the plugin to listen for this types
-		for (type in cache.events) {
-			this.bind( type, cache.events[type] );
-		}
+		// Work only with array, more convenient
+		mime = mime || []; // Don't bother to loop if we doesn't have a MIME type
+		mime = mime.push ? mime : [mime]; // "cast" regular MIME type to array
 
-		// The plugin and element are ready, set the property we wanted to set
-		for (key in cache.properties) {
-			this.set( key, cache.properties[key] );
-		}
-	}, // end of ready()
+		// Loop through MIME types (for some extensions we can have multiple MIME types)
+		for (count = mime.length; i < count; i++) {
+			// Test the MIME type
+			result = this.canPlayType(mime[i]);
 
-
-	/**
-	 * Set a property's value.
-	 * @function
-	 *
-	 * @param {string} property The property name
-	 * @param {*} value The new property's value
-	 */
-	set: function( property, value ) {
-		// Check if the renderer is ready
-		if (this.isReady) {
-			// Use the set method of the element (plugins) if exists
-			if (typeof this.element.set === "function") {
-				this.element.set( property, value );
-			} else {
-				this.element[property] = value;
+			// Ouh, nice result, exit
+			if (result === "probably") {
+				return result;
 			}
-		} else {
-			// If the element doesn't exists (not ready or not in the DOM), store properties and values in a cache
-			this.cache.properties[property] = value;
+
+			// Meh. Continue in case we found a probably
+			canPlayType = canPlayType || result;
 		}
-	}, // end of set()
+
+		// Return the result (may be "", "maybe" or "probably")
+		return canPlayType;
+	}, // end of Renderer.canPlay()
 
 
 	/**
-	 * Stop listening for an event type.
-	 * @function
+	 * Check if a given MIME type is readable by this renderer
 	 *
-	 * @param {string} type The event type to clear
+	 * @param {string} type The MIME type to check
+	 * @return {string} Returns "maybe" or "probably" is the MIME type is supported, "" otherwise
 	 */
-	unbind: function( type ) {
-		// An handler was already set and we have an element
-		if (this.cache.events[type] && this.element && this.element.unbind) {
-			// Tell to the plugin to stop listening for this type
-			this.element.unbind( type );
+	canPlayType: function canPlayType(type) {
+		return this.types[type] || "";
+	}, // end of Renderer.canPlayType()
+
+
+	/**
+	 * Try to guess the MIME type based on an extension or an URL
+	 *
+	 * @param {string} ext The extension or URL to use to guess MIME type
+	 * @return {string|array|false} Returns a string or an array of MIME types. undefined if the extension is unknown.
+	 */
+	guessType: function guessType(ext) {
+		var type, key;
+
+		// Treat ext as full URL if its length is more than 5 characters
+		if (ext && ext.length > 5) {
+			ext = ext.match(rExt); // Get the probable extensions
+			ext = ext ? ext[ext.length - 1].substring(1) : ""; // Keep the last one
 		}
 
-		// Clean the cache for this event type
-		delete this.cache.events[type];
-	}, // end of unbind()
+		// Exit if we don't have an extension to test
+		if (!ext) { return; }
+
+		// Transforming the extension to a RegExp, easier to find in Renderer.mimes' keys
+		ext = new RegExp(ext, "i");
+
+		for (type in Renderer.mimes) {
+			for (key in Renderer.mimes[type]) {
+				// Check if this key is the extension we're looking for
+				if (ext.test(key)) {
+					// Check if the MIME is an array
+					if (Renderer.mimes[type][key].push) {
+						// Before returning, append the type in front of MIMEs
+						return Renderer.mimes[type][key].join().replace(rAppendType, type + "/$1").split(",");
+					} else {
+						return type + "/" + Renderer.mimes[type][key];
+					}
+				}
+			} // end of for (ext in Renderer.mimes[type])
+		} // end of for (type in Renderer.mimes)
+
+		// Return undefined if extension is unknown
+		return;
+	}, // end of Renderer.guessType()
 
 
-	// API shorthands
-	play:  Renderer.createShorthand( "play" ),
-	pause: Renderer.createShorthand( "pause" ),
-	load:  Renderer.createShorthand( "load" )
-}; // end of Renderer.prototype
+	/**
+	 * Inherit from a class
+	 * This function seems strange because it is.
+	 * It is only a sugar to ease developper's pain.
+	 *
+	 * @param {function} base The base class to inherit to.
+	 * @return {undefined} Return nothing.
+	 *
+	 * @example
+	 *   function LambdaRenderer() {} // Create a new "class"
+	 *   LambdaRenderer.inherit = Renderer.inherit; // LambdaRenderer now know to inherit
+	 *   LambdaRenderer.inherit(Renderer); // Inherit from Renderer
+	 */
+	inherit: function inherit(base) {
+		// Set the constructor's name if it doesn't exists (IE)
+		// Beware to only set it if undefined, this property is read-only in strict mode
+		if (!this.name) {
+			var name = rFunction.exec(this.toString()); // Search for the function name
+			this.name = name ? name[1] : "unknown"; // Define the name or define to "unknown"
+		}
 
-// Expose
-window.Renderer = Renderer;
+		this.prototype = new base(); // Inherit from the base
+		this.prototype.constructor = this; // Correct the constructor
+	}, // end of Renderer.inherit()
+
+
+	/**
+	 * Add a renderer to the list of supported renderers
+	 *
+	 * @param {Renderer} renderer The renderer to register.
+	 * @return {undefined} Return nothing.
+	 */
+	register: function register(renderer) {
+		if (renderer.isSupported) {
+			this.supported.push(renderer);
+		}
+	}, // end of Renderer.register()
+
+
+	/**
+	 * A list of currently supported renderers
+	 * @type {array}
+	 */
+	supported: []
+}); // end of Renderer.extend(Renderer)
