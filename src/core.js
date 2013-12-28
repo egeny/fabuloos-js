@@ -51,6 +51,39 @@ function fab(config) {
 
 
 var
+	/**
+	 * The properties we can get
+	 * @type {string}
+	 */
+	getterProperties = "error networkState readyState width height videoWidth videoHeight src currentSrc preload buffered currentTime duration defaultPlaybackRate playbackRate seeking seekable paused played ended poster autoplay controls loop volume muted",
+
+	/**
+	 * When setting an hash of properties we may have to ignore some irrelevant properties
+	 * @type {string}
+	 */
+	ignoreProperties = "type",
+
+	/**
+	 * The properties we can set
+	 * @type {string}
+	 */
+	setterProperties = "width height src preload currentTime defaultPlaybackRate playbackRate poster autoplay controls loop volume muted",
+
+	/**
+	 * Some properties have to be priorized while setting using an hash
+	 * @type {object}
+	 */
+	setterPriorities = {
+		first: "element",
+		last:  "src"
+	},
+
+	/**
+	 * The properties we can toggle
+	 * @type {string}
+	 */
+	togglerProperties = "autoplay controls loop muted",
+
 	/*!
 	 * A RegExp used to test if an element is <audio> or <video>
 	 * @type {RegExp}
@@ -160,15 +193,6 @@ fab.extend = function extend(obj) {
 // Extend the fabuloos' "class" with static members
 fab.extend(fab, {
 	/**
-	 * An unique identifier for this class.
-	 * Used to link a DOM element to a JS object.
-	 * @api dev
-	 * TODO: XXX/MOVE
-	 */
-	expando: "fabuloos" + (+new Date()),
-
-
-	/**
 	 * A cache for all fabuloos' instances
 	 * @api dev
 	 * @type {array}
@@ -177,13 +201,21 @@ fab.extend(fab, {
 
 
 	/**
-	 * A collection of regexp used to split and trim
-	 * @static
-	 * @type RegExp
-	 * TODO: XXX/MOVE
+	 * Create a closure calling a method on the renderer
+	 *
+	 * @param {string} method The method name to call
+	 * @return {function} A closure calling the method
 	 */
-	rSplit: /\s+/,
-	rTrim: /^\s+|\s+$/g,
+	shorthand: function shorthand(method) {
+		return function() {
+			// Call the method only if available
+			if (this._renderer && typeof this._renderer[method] === "function") {
+				this._renderer[method]();
+			}
+
+			return this; // Chaining
+		};
+	}, // end of shorthand()
 
 
 	/**
@@ -250,14 +282,14 @@ fab.extend({
 		 */
 		_config.element = _config.element || config || null;
 
-		// Add this instance to the instances' cache and retrieve its index
-		this._index = fab.instances.push(this) - 1;
+		// Add this instance to the instances' cache
+		fab.instances.push(this);
 
 		// Create a closure so the renderers will be able to trigger events on the right instance
 		this._triggerer = this.closure("trigger");
 
 		// Define an UID for this instance (used to define a default ID when needed)
-		this._uid = ++fab.UID;
+		this._uid = "fabuloos-" + (++fab.UID);
 
 		// Set the configuration
 		this.config(_config);
@@ -273,6 +305,7 @@ fab.extend({
 	 * @return {fabuloos} Return the current instance to allow chaining.
 	 */
 	attach: function attach() {
+		// TODO: bad refactoring
 		if (this._renderer) {
 			// Allow the renderer to trigger
 			this._renderer._triggerer = this._triggerer;
@@ -348,17 +381,17 @@ fab.extend({
 	 * @return {null} Return `null` to stop chaining.
 	 */
 	destroy: function destroy() {
-		var instance, i = this._index, prop; // Loop specific
+		var i = 0, count = fab.instances.length, prop; // Loop specific
 
 		// Restore the old element (if any)
 		this.restore();
 
-		// Remove this instance from the caches
-		fab.instances.splice(this._index, 1);
-
-		// Correct the indexes of the instances following the one we just removed
-		while ((instance = fab.instances[i])) {
-			instance._index = i++;
+		// Loop through all instances and remove this instance when found
+		for (; i < count; i++) {
+			if (fab.instances[i] === this) {
+				fab.instances.splice(i, 1);
+				break;
+			}
 		}
 
 		// Delete all private properties
@@ -380,6 +413,7 @@ fab.extend({
 	 * @returns {fabuloos} Return the current instance to allow chaining.
 	 */
 	detach: function detach() {
+		// TODO: bad refactoring
 		if (this._renderer) {
 			// Disallow the renderer to trigger
 			this._renderer._triggerer = null;
@@ -421,7 +455,7 @@ fab.extend({
 			this.restore();
 		}
 
-		this._id     = id || "fabuloos-" + this._uid; // Set the new id or use the default setted by #restore()
+		this._id     = id || this._uid; // Set the new id or use the default setted by #restore()
 		this._old    = this._element = elt.nodeName ? elt : document.getElementById(id); // Set the current element
 		this._config = {}; // Define an hash for the renderers' configuration (reflecting the element)
 
@@ -478,6 +512,23 @@ fab.extend({
 
 
 	/**
+	 * Get a player's property
+	 * Warning: breaks the chaining.
+	 *
+	 * @param {string} property The property's value to get.
+	 * @return {*} Return the property's value.
+	 */
+	get: function get(property) {
+		return this._renderer ? this._renderer.get(property) : undefined;
+	}, // end of get()
+
+	// API shorthands
+	load:  fab.shorthand("load"),
+	pause: fab.shorthand("pause"),
+	play:  fab.shorthand("play"),
+
+
+	/**
 	 * Change or get the renderer
 	 *
 	 * @param {Renderer} renderer The new renderer to use.
@@ -519,14 +570,14 @@ fab.extend({
 		// Create the new renderer
 		this._renderer = new _renderer(this._config);
 
-		// Attach all listeners
-		this.attach();
-
 		// Replace the old renderer markup
 		this._renderer.replace(this._element);
 
 		// Keep a reference of the element
 		this._element = this._renderer.element;
+
+		// Attach all listeners
+		this.attach();
 
 		return this; // Chaining
 	}, // end of renderer()
@@ -587,7 +638,7 @@ fab.extend({
 		}
 
 		// Set a default id since this instance isn't related to any element
-		this._id  = "fabuloos-" + this._uid;
+		this._id  = this._uid;
 		this._old = this._element = null;
 
 		return this; // Chaining
@@ -615,27 +666,78 @@ fab.extend({
 	 * </code>
 	 */
 	set: function set(property, value) {
-		var obj = arguments[0] || {}, src;
-
 		// Handle hash mode
 		if (arguments.length === 1) {
-			// Loop through each property to set its value
-			// TODO: prioritize
-			for (property in obj) {
-				// Always set the source last
-				/*if (property === "src") {
-					src = obj.src;
-					continue;
-				}*/
+			var
+				prop, position, // Loop specific
+				copy   = {}, // A copy of the received hash
+				values = {}, // The prioritized hash
+				first  = fab.toArray(setterPriorities.first.split(" ")), // The list of properties to set first
+				last   = fab.toArray(setterPriorities.last.split(" ")), // The list of properties to set last
+				order  = ["first", "middle", "last"]; // The order of the priorities
 
-				// Call itself to handle properly setting property/value
-				this.set(property, obj[property]);
+			// Copy the properties/values since we have to prioritize
+			for (prop in arguments[0]) {
+				copy[prop] = arguments[0][prop];
 			}
 
-			// Set the source (if any)
-			//this.src(src);
+			// Loop through the properties to set first
+			while ((prop = first.shift())) {
+				// Makes sure we have this property to set
+				if (prop in copy) {
+					// Makes sure we have a "first" hash where to store the properties/values
+					values.first = values.first || {};
 
-			return this; // Allow chaining
+					// Store the property/value
+					values.first[prop] = copy[prop];
+
+					// Delete the property from the hash since we just prioritized it
+					delete copy[prop];
+				}
+			} // end of while ((prop = first.shift()))
+
+			// Loop through the properties to set last
+			while ((prop = last.shift())) {
+				// Makes sure we have this property to set
+				if (prop in copy) {
+					// Makes sure we have a "last" hash where to store the properties/values
+					values.last = values.last || {};
+
+					// Store the property/value
+					values.last[prop] = copy[prop];
+
+					// Delete the property from the hash since we just prioritized it
+					delete copy[prop];
+				}
+			}
+
+			// Define the properties/values to set in the middle (no particuliar priority)
+			values.middle = copy;
+
+			// Loop through orders to set sequentially
+			while ((position = order.shift())) {
+				// Get the group of properties/values to set for this position
+				for (prop in values[position]) {
+					value = values[position][prop];
+
+					// Small exception for "src"
+					// Sometimes it is better to send the whole configuration
+					if (prop === "src") {
+						value = value && value.substr ? arguments[0] : value;
+					}
+
+					// Set the property using the other signature
+					this.set(prop, value);
+				}
+			}
+
+			return this; // Chaining
+		} // end of if (arguments.length === 1)
+
+		// We can ignore some properties
+		// The "type" property is useless until related to an "src" property
+		if (new RegExp(property).test(ignoreProperties)) {
+			return this; // Chaining
 		}
 
 		// Prefer specialized method having the property's name
@@ -699,16 +801,9 @@ fab.extend({
 		while ((source = _sources.shift())) {
 			_source = {};
 
-			// If source is an object copy it to keep its values
-			if (source.src) {
-				for (prop in source) {
-					_source[prop] = source[prop];
-				}
-			}
-
 			// Makes sure we have what we need
-			_source.src       = _source.src  || source; // If it wasn't corrected, use the source
-			_source.type      = _source.type || Renderer.guessType(_source.src); // Use or guess the type
+			_source.src       = source.src  || (source.substr ? source : null); // Search for the URL
+			_source.type      = source.type || Renderer.guessType(_source.src); // Use or guess the type
 			_source.solutions = {}; // Prepare the solutions hash
 
 			// Copy the renderers

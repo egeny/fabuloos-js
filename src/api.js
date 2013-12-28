@@ -1,73 +1,32 @@
-/*jshint newcap: false */
-/*global HTMLMediaRenderer */
-
-var
-	/**
-	 * The properties we can get
-	 * @type {string}
-	 */
-	getterProperties = "error networkState readyState width height videoWidth videoHeight src currentSrc preload buffered currentTime duration defaultPlaybackRate playbackRate seeking seekable paused played ended poster autoplay controls loop volume muted",
-
-	/**
-	 * The properties we can set
-	 * @type {string}
-	 */
-	setterProperties = "width height src preload currentTime defaultPlaybackRate playbackRate poster autoplay controls loop volume muted",
-
-	/**
-	 * The properties we can toggle
-	 * @type {string}
-	 */
-	togglerProperties = "autoplay controls loop muted";
-
-
-
 // Extend the framework with new methods
 fab.extend({
 
 
-
 	/**
-	 * Get a player's property. Warning: breaks the chaining.
-	 * @function
-	 *
-	 * @param {string} property The property's value to return
-	 *
-	 * @returns Return the property's value
-	 *
-	 * @example
-	 *  <code>
-	 *    var player = fabuloos( "media" );
-	 *    player.get( "paused" ); // true or false
-	 *  </code>
+case "height":
+case "width":
+	// Don't bother if we haven't any element to measure
+	if (!this.element) { return 0; }
+
+	value = window.getComputedStyle ?
+	// Pass a second argument (null) to getComputedStyle for compatibility reasons
+	// @see https://developer.mozilla.org/en-US/docs/DOM/window.getComputedStyle
+	window.getComputedStyle(this.element, null).getPropertyValue(property) :
+	// Use the scrollWidth/scrollHeight property since it is calculated in a different way in IE
+	this.element["scroll" + property.charAt(0).toUpperCase() + property.slice(1)];
+
+	return parseInt(value, 10);
 	 */
-	get: function( property ) {
-		return (new RegExp( property ).test( getterProperties ) && this._renderer) ? this._renderer.get( property ) : this._config[property];
-	}, // end of get()
+	 
 
 
 	/**
-	 * Load the source.
-	 * @function
-	 *
-	 * @returns {fabuloos} Return the current instance of the player to allow chaining
-	 *
-	 * @example
-	 *  <code>
-	 *    var player = fabuloos( "media" );
-	 *    player
-	 *      .set( "src", "http://example.org/file.mp4" )
-	 *      .set( "autoplay", true )
-	 *      .load();
-	 *  </code>
+	 * TODO
 	 */
-	load: function() {
-		if (this._renderer) {
-			this._renderer.load();
-		}
+	time: function(value) {
+		return this[(value === undefined) ? "get" : "set"]("currentTime", value);
+	}, // end of time()
 
-		return this; // Chaining
-	}, // end of load()
 
 
 	/**
@@ -177,68 +136,6 @@ fab.extend({
 
 		return this; // Chaining
 	}, // end of off()
-
-
-	/**
-	 * Pause the playback.
-	 * @function
-	 *
-	 * @returns {fabuloos} Return the current instance of the player to allow chaining
-	 *
-	 * @example
-	 *  <code>
-	 *    var player = fabuloos( "media" );
-	 *    player.pause(); // Pause the playback
-	 *  </code>
-	 */
-	pause: function() {
-		if (this._renderer) {
-			this._renderer.pause();
-		}
-
-		return this; // Chaining
-	}, // end of pause()
-
-
-	/**
-	 * Launch the playback on the player.
-	 * A source or object can be directly given as parameter.
-	 * @function
-	 *
-	 * @param {string|object} [source=undefined] The source to play. The MIME type will be guessed if not provided.
-	 *
-	 * @param {string} [source=undefined] The source to play
-	 *
-	 * @param {string} source.src The source to play
-	 * @param {string} [source.type=undefined] The source's MIME type
-	 *
-	 * @returns {fabuloos} Return the current instance of the player to allow chaining
-
-	 * @example
-	 *  <code>
-	 *    var player = fabuloos( "media" );
-	 *    player.play(); // Launch the playback
-	 *    player.play( "http://example.org/file.mp4" ); // Launch a specific source
-
-	 *    // Launch a specific source by providing MIME type
-	 *    player.play({
-	 *      src:  "http://example.org/file.mp4",
-	 *      type: "video/mp4"
-	 *    });
-	 *  </code>
-	 */
-	play: function( source ) {
-		if (source) {
-			this.src( source );
-		}
-
-		if (this._renderer) {
-			this._renderer.play();
-		}
-
-		return this; // Chaining
-	}, // end of play()
-
 
 	/**
 	 * Get the player's ratio
