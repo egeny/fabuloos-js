@@ -58,7 +58,7 @@ test("Instances ID and UID consistancy", function() {
 
 	p1.init("div");
 	equal(p1._id,  "div", 'p1.init("div") should increment uid and give "div" as id');
-	equal(p1._uid, 5,     "Now, p1's uid should be 5");
+	equal(p1._uid, "fabuloos-5", "Now, p1's uid should be `fabuloos-5`");
 });
 
 
@@ -233,8 +233,6 @@ test("Init should do its stuff", function() {
 	var player = fab();
 
 	equal(player._id, "fabuloos-1", "An instance should have an id");
-	equal(player._index, 0, "An instance should have a reference for its position in the cache");
-	ok(player._renderers, "An instance should have a renderers property");
 });
 
 
@@ -257,11 +255,6 @@ test("Destroying the instance", function() {
 	player.destroy();
 	equal(document.getElementById(div.id), div, "Destroying should restore the previous element");
 	equal(fab.instances.length, 0, "The cache should be empty");
-
-	player  = fab();
-	player2 = fab();
-	player.destroy();
-	equal(player2._index, 0, "Destroying an instance should correct the other instances' indexes");
 });
 
 
