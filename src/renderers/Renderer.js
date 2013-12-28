@@ -1,3 +1,5 @@
+/*jshint newcap: false */
+
 /**
  * The base Renderer class
  * @abstract @constructor
@@ -39,6 +41,12 @@ Renderer.mimes = {
 
 
 var
+	/*!
+	 * A RegExp used to append type on multiple MIME types
+	 * @type {RegExp}
+	 */
+	rAppendType = /([^,]+)/g,
+
 	/*!
 	 * A RegExp used to extract the file extension from an URL
 	 * @type {RegExp}
@@ -218,8 +226,149 @@ Renderer.extend(Renderer, {
 
 
 	/**
+	 * An instance cache, used to retrieve an instance from a plugin
+	 * @type {object}
+	 */
+	instances: {},
+
+
+	/**
+	 * Create a closure calling a method on the API
+	 *
+	 * @param {string} method The method name to call
+	 * @return {function} A closure calling the method
+	 */
+	shorthand: function shorthand(method) {
+		return function() {
+			return (this.api && typeof this.api[method] === "function") ? this.api[method].apply(this.api, arguments) : undefined;
+		};
+	}, // end of shorthand()
+
+
+	/**
 	 * A list of currently supported renderers
 	 * @type {array}
 	 */
 	supported: []
 }); // end of Renderer.extend(Renderer)
+
+
+// Extend the HTMLRenderer's prototype
+Renderer.extend({
+	/**
+	 * Renderer initialization
+	 *
+	 * @param {object} config The configuration of the renderer.
+	 *   @param {string} id The id the renderer's markup will have.
+	 *   @param {number} height The renderer's height (might be 0).
+	 *   @param {number} width The renderer's width (might be 0).
+	 * @return {Renderer} Return the current instance to allow chaining.
+	 */
+	init: function init(config) {
+		var
+			renderer  = this.constructor, // Retrieve the renderer's "class"
+			instances = Renderer.instances[renderer.name]; // Retrieve the instances cache for this kind of renderers
+
+		// Save a reference to the configuration (do NOT modify this hash)
+		this.config = config;
+
+		// This renderer was never instanciated, initialize a cache
+		if (!instances) {
+			/*!
+			 * Use an hash as fake array for cache.
+			 * Some renderers will call a method on window. We need a way to point to the right instance.
+			 * So we expose something like Renderer.instances.LambdaRenderer.myPlayer = this.
+			 * Save also this cache reference to the renderer.
+			 */
+			Renderer.instances[renderer.name] = renderer.instances = instances = {};
+		}
+
+		// Store this instance in the cache (even if it already exists)
+		instances[config.id] = this;
+
+		// TODO
+		// Handler?
+		// Cache?
+
+		return this; // Chaining
+	}, // end of init()
+
+
+	/**
+	 * Destroy the instance
+	 * Will simply remove itself from the cache.
+	 *
+	 * @param {undefined}
+	 * @return {null} Return `null` to stop chaining.
+	 */
+	destroy: function destroy() {
+		var cache = Renderer.instances[this.constructor.name];
+		if (cache[this.config.id]) {
+			delete cache[this.config.id];
+		}
+
+		// It is more convenient to return null (end chaining)
+		return null;
+	}, // end of destroy()
+
+
+	/**
+	 * A flag to check if this renderer is ready (wait for plugin initialization)
+	 * @type {boolean}
+	 */
+	isReady: false,
+
+
+	// API shorthands
+	load:  Renderer.shorthand("load"),
+	pause: Renderer.shorthand("pause"),
+	play:  Renderer.shorthand("play"),
+
+
+	/**
+	 * Get a property's value
+	 *
+	 * @param {string} property The property's value to get.
+	 * @return {*} Return the property's value.
+	 */
+	get: function get(property) {
+		// Let the time to the renderer to finish initializing
+		if (this.isReady) {
+			return (typeof this.api.get === "function") ? this.api.get(property) : this.api[property];
+		}
+	}, // end of get()
+
+
+	/**
+	 * Set a property's value
+	 *
+	 * @param {string} property The property to change.
+	 * @param {*} value The new property's value.
+	 * @return {*} Return the value corrected by the renderer.
+	 */
+	set: function set(property, value) {
+		// Check if the renderer is ready
+		if (this.isReady) {
+			// Use the set method of the element (plugins) if exists
+			if (typeof this.api.set === "function") {
+				return this.api.set(property, value);
+			} else {
+				// Otherwise try to set the property in the api
+				// This may fail sometimes depending on the properties (ex: setting currentTime too soon)
+				try {
+					this.api[property] = value;
+				} catch (e) {}
+
+				// Return the corrected value
+				return this.api[property];
+			}
+		} else {
+			console.log("renderer not ready");
+			// If the element doesn't exists (not ready or not in the DOM), store properties and values in a cache
+			//this.cache.properties[property] = value;
+		}
+	} // end of set()
+}); // end of Renderer.extend()
+
+// Expose
+window.Renderer = Renderer;
