@@ -17,7 +17,7 @@ case "width":
 
 	return parseInt(value, 10);
 	 */
-	 
+
 
 
 	/**
@@ -150,34 +150,6 @@ case "width":
 
 		return (width && height) ? width / height : 0;
 	}, // end of ratio()
-
-
-
-
-
-
-	/**
-	 * Toggle a player's property's value
-	 * @function
-	 *
-	 * @param {string} property The property to toggle
-	 *
-	 * @returns {fabuloos} Return the current instance of the player to allow chaining
-	 *
-	 * @example
-	 *  <code>
-	 *    var player = fabuloos( "media" );
-	 *    player.toggle( "autoplay" );
-	 *  </code>
-	 */
-	toggle: function( property ) {
-		if (new RegExp( property ).test( togglerProperties ) && this._renderer) {
-			// Set the property by toggleing its value
-			this._renderer.set( property, !this._renderer.get( property ) );
-		}
-
-		return this; // Chaining
-	}, // end of toggle()
 
 
 	/**

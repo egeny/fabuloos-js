@@ -912,10 +912,32 @@ fab.extend({
 
 
 	/**
+	 * Toggle a player's property's value
+	 *
+	 * @param {string} property The property to toggle.
+	 * @return {fabuloos} Return the current instance to allow chaining.
+	 *
+	 * @example
+	 *  <code>
+	 *    var player = fabuloos("media");
+	 *    player.toggle("autoplay");
+	 *  </code>
+	 */
+	toggle: function toggle(property) {
+		if (new RegExp(property).test(togglerProperties) && this._renderer) {
+			// Set the property by toggleing its value
+			this.set(property, !this.get(property));
+		}
+
+		return this; // Chaining
+	}, // end of toggle()
+
+
+	/**
 	 * Trigger the listeners for a type
 	 * You can trigger some types at once by separating them with a space.
 	 *
-	 * @param {string} type The type(s) of event to trigger
+	 * @param {string} type The type(s) of event to trigger.
 	 * @return {fabuloos} Return the current instance to allow chaining.
 	 */
 	trigger: function trigger(type) {
