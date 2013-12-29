@@ -164,7 +164,7 @@ fab.event = {
 			type; // Loop specific
 
 		// Allow multiple events types separated by a space
-		types = types.replace(rTrim, "").split(rSplit); // Trim first to avoid bad splitting
+		types = types ? types.replace(rTrim, "").split(rSplit) : []; // Trim first to avoid bad splitting
 
 		// Loop through each event types
 		while ((type = types.shift())) {
