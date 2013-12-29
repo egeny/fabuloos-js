@@ -194,7 +194,6 @@ fab.extend = function extend(obj) {
 fab.extend(fab, {
 	/**
 	 * A cache for all fabuloos' instances
-	 * @api dev
 	 * @type {array}
 	 */
 	instances: [],
@@ -305,10 +304,15 @@ fab.extend({
 	 * @return {fabuloos} Return the current instance to allow chaining.
 	 */
 	attach: function attach() {
-		// TODO: bad refactoring
+		var
+			cache = fab.event.cache(this), // Get the events cache
+			type; // Loop specific
+
 		if (this._renderer) {
-			// Allow the renderer to trigger
-			this._renderer._triggerer = this._triggerer;
+			// Tell the renderer to listen for all the types
+			for (type in cache.handlers) {
+				this._renderer.bind(type);
+			}
 		}
 
 		return this; // Chaining
@@ -413,10 +417,15 @@ fab.extend({
 	 * @returns {fabuloos} Return the current instance to allow chaining.
 	 */
 	detach: function detach() {
-		// TODO: bad refactoring
+		var
+			cache = fab.event.cache(this), // Get the events cache
+			type; // Loop specific
+
 		if (this._renderer) {
-			// Disallow the renderer to trigger
-			this._renderer._triggerer = null;
+			// Tell the renderer to stop listening for all the types
+			for (type in cache.handlers) {
+				this._renderer.unbind(type);
+			}
 		}
 
 		return this; // Chaining
@@ -522,9 +531,144 @@ fab.extend({
 		return this._renderer ? this._renderer.get(property) : undefined;
 	}, // end of get()
 
-	// API shorthands
+
+	/**
+	 * Load the current source
+	 *
+	 * @param {undefined}
+	 * @return {fabuloos} Return the current instance to allow chaining.
+	 */
 	load:  fab.shorthand("load"),
+
+
+	/**
+	 * Unregister an handler for a given event
+	 *
+	 * @param {string} types The event type(s) to stop listening.
+	 *   May be null (will remove all handlers).
+	 * @param {function} handler The handler previously attached.
+	 *   May be null (will remove all handlers for the type).
+	 * @return {fabuloos} Return the current instance to allow chaining.
+	 *
+	 * @param {object} obj An hash of types and handlers to remove.
+	 * @return {fabuloos} Return the current instance to allow chaining.
+	 *
+	 * @example
+	 *   fabuloos(…)
+	 *    .off() // Will remove all listeners
+	 *    .off("", handle) // Will remove "handle" for each types
+	 *    .off("pause") // Will remove all listeners for the "pause" event type
+	 *    .off("pause", handle) // Will remove "handle" for the "pause" event type
+	 *    .off("play pause") // Will remove all listeners for the "play" and "pause" event types
+	 *    .off("play pause", handle); // Will remove "handle" for the "play" and "pause" event types
+	 */
+	off: function off(types, handler) {
+		var
+			cache      = fab.event.cache(this), // Get the events cache
+			previously = [], // The list of currently listening event types
+			type; // Loop specific
+
+		// Support receiving object literals
+		if (arguments.length === 1) {
+			// Simply loop through the hash and call itself
+			for (type in arguments[0]) {
+				this.off(type, arguments[0][type]);
+			}
+
+			return this; // Chaining
+		}
+
+		// Generate the list of event types we are currently listening
+		for (type in cache.handlers) {
+			previously.push(type);
+		}
+
+		// TODO remove -> off
+		// Unregister this handler for this/these type(s)
+		fab.event.remove(this, types, handler);
+
+		// If we have a renderer, tell him to stop listening if there is no more handler for this/these type(s)
+		if (this._renderer) {
+			// Retrieve the cache
+			cache = fab.event.cache(this);
+
+			// Loop through the event types we were listening before removing some
+			while ((type = previously.shift())) {
+				// Check if the event type still exists
+				if (!cache.handler[type]) {
+					// If not, tell the renderer to stop listening
+					this._renderer.unbind(type);
+				}
+			}
+		}
+
+		return this; // Chaining
+	}, // end of off()
+
+
+	/**
+	 * Register an handler for a given event
+	 *
+	 * @param {string} types The event type(s) to listen.
+	 *   You may provide multiple event types by separating them with a space.
+	 * @param {function} handler The function to call when the event type is fired.
+	 * @return {fabuloos} Return the current instance to allow chaining.
+	 *
+	 * @param {object} obj An hash of types and handlers.
+	 * @return {fabuloos} Return the current instance to allow chaining.
+	 *
+	 * @example
+	 *   fab(…)
+	 *    .on("play", function() { console.log("play event"); })
+	 *    .on("pause", handlePause);
+	 *
+	 *   // We can also register multiple events for the same handler:
+	 *   fab(…).on("play pause", handleTogglePlay);
+	 */
+	on: function on(types, handler) {
+		// Support receiving object literals
+		if (arguments.length === 1) {
+			// Simply loop through the hash and call itself
+			for (var type in arguments[0]) {
+				this.on(type, arguments[0][type]);
+			}
+
+			return this; // Chaining
+		}
+
+		// Prevent bad arguments
+		if (typeof types !== "string" || typeof handler !== "function") {
+			return this; // Chaining
+		}
+
+		// Register this handler for this/these type(s)
+		fab.event.on(this, types, handler);
+
+		// If we have a renderer, tell him to listen for this/these type(s)
+		// If there is no renderer (first, we cannot receive events) the types will be set using attach
+		if (this._renderer) {
+			this._renderer.bind(types);
+		}
+
+		return this; // Chaining
+	}, // end of on()
+
+
+	/**
+	 * Pause the playback
+	 *
+	 * @param {undefined}
+	 * @return {fabuloos} Return the current instance to allow chaining.
+	 */
 	pause: fab.shorthand("pause"),
+
+
+	/**
+	 * Launch the playback
+	 *
+	 * @param {undefined}
+	 * @return {fabuloos} Return the current instance to allow chaining.
+	 */
 	play:  fab.shorthand("play"),
 
 
@@ -569,6 +713,9 @@ fab.extend({
 
 		// Create the new renderer
 		this._renderer = new _renderer(this._config);
+
+		// Define the triggerer
+		this._renderer.triggerer = this._triggerer;
 
 		// Replace the old renderer markup
 		this._renderer.replace(this._element);
@@ -666,7 +813,7 @@ fab.extend({
 	 * </code>
 	 */
 	set: function set(property, value) {
-		// Handle hash mode
+		// Support receiving object literals
 		if (arguments.length === 1) {
 			var
 				prop, position, // Loop specific
@@ -901,8 +1048,7 @@ fab.extend({
 
 				// This renderer seems to be able to play this source
 				if (source.solutions[renderer.name]) {
-					this.renderer(renderer); // Change the renderer for this one
-					return this; // Chaining
+					return this.renderer(renderer); // Change the renderer for this one
 				}
 			} // end of for
 		} // end of while
@@ -919,7 +1065,7 @@ fab.extend({
 	 *
 	 * @example
 	 *  <code>
-	 *    var player = fabuloos("media");
+	 *    var player = fab("media");
 	 *    player.toggle("autoplay");
 	 *  </code>
 	 */
