@@ -1,197 +1,173 @@
-/**
+var
+	/**
+	 * The list of accepted properties for an event
+	 * @type {array}
+	 */
+	properties = "bubbles cancelable currentTarget eventPhase relatedTarget target timeStamp".split(" "),
+
+	/**
+	 * A collection of regexp used to split and trim
+	 * @type {RegExp}
+	 */
+	rSplit = /\s+/,
+	rTrim  = /^\s+|\s+$/g;
+
+
+/*!
  * Fix a given event to fit to the W3C standard in each browsers (abstraction)
- * @private @function
  *
- * @param {event} event The event to fix
- *
- * @returns {event} The fixed event
+ * @param {string|event} event The event to fix.
+ * @return {fab.Event} The fixed event.
  */
-function fix( event ) {
+function fix(event) {
 	// This event is already fixed, don't bother
-	if (event[fab.expando]) {
+	if (event[fab.event.expando]) {
 		return event;
 	}
 
-	// Create a new Event object based on the original event using a custom class,
-	// give the ability to define read-only properties (such as currentTarget)
 	var
-		key,
-		originalEvent = event;
-		event = fab.Event( originalEvent );
+		original = event,
+		property, i = properties.length; // Loop specific
 
-	// Copy the original properties to the new event
-	for (key in originalEvent) {
-		// Copy only if the properties who aren't already defined (by the custom class)
-		if (!event[key]) {
-			event[key] = originalEvent[key];
+	// Create a new Event based on the original, gives the ability to define read-only properties
+	event = new fab.Event(original);
+
+	// Copy the accepted original's properties in the event
+	while (i--) {
+		property = properties[i];
+
+		// Copy only if the property was set
+		if (property in original) {
+			event[property] = original[property];
 		}
-	}
-
-	// Fix target property, if necessary
-	if (!event.target) {
-		event.target = event.srcElement || document;
 	}
 
 	return event;
 } // end of fix()
 
 
-/**
- * Retrieve or prepare the handlers cache for an element or an object
- * @private @function
- *
- * @param {node|object} element The element or object
- * @param {boolean} [create=false] Do we have to create a new cache if doesn't exists?
- *
- * @returns Return the cache for the element
- */
-function getCache( element, create ) {
-	var id = element[ fab.expando ]; // Try to retrieve the guid with the expando
-
-	// Do we have to create a cache if don't exists?
-	create = !!create;
-
-	// The element is not expanded yet
-	if (!id && create) {
-		// Try to use the element's id or use a guid
-		id = element[ fab.expando ] = element.id || ++fab.event.guid;
-
-		// Prepare the cache
-		fab.event.cache[id] = {
-			// Prepare the event types and handlers cache
-			handlers: {},
-
-			// Prepare the handleManager to correct the this keyword in IE
-			handleManager: function( event ) {
-				return handle.call( element, event );
-			}
-		};
-
-		/*!
-		 * Register some default listener for custom events if is IE (old event behaviour)
-		 * Beware of Opera which have both addEventListener and attachEvent
-		 */
-		if (!document.addEventListener && element.attachEvent) {
-			// No need to provide handler, returnFalse will be used
-			// The handle function will correct the event
-			fab.event.add( element, "dataavailable losecapture" );
-		}
-	}
-
-	return fab.event.cache[id];
-}
-
-
-/**
+/*!
  * Launch the registered handlers for the triggered event
- * @private @function
  *
- * @param {event} event The event triggered
- *
- * @returns Return the value of the last handler executed or true if there where no handlers
+ * @param {string|event} event The event triggered.
+ * @return Return the value of the last handler executed or true if there were no handlers.
  */
-function handle( event ) {
-	// Makes sure we have an event
-	event = event || window.event;
-
-	// Correct the event if it is a custom event (aka "unknown" events for IE)
-	event = ((event.type === "dataavailable" || event.type === "losecapture") && event.originalEvent) ? event.originalEvent : event;
-
+function handle(event) {
 	// Fix the event
 	event = fix(event);
 	event.currentTarget = this;
 
 	var
-		cache = getCache( this ), // Get the handlers cache for this element
-		handler, i = 0, // Loop specific
-		handlers = cache ? (cache.handlers[ event.type ] || []) : [], // Get the cached handlers for this element
-		returnValue = true;
+		handler, // Loop specific
+		handlers = fab.event.cache(this).handlers[event.type] || [], // Retrieve the handlers for this type
+		result   = true;
 
-	// Loop through handlers
-	while ((handler = handlers[i++])) {
+	// Work on a copy of the cache
+	handlers = handlers.slice(0);
+
+	// Loop through the handlers
+	while ((handler = handlers.shift())) {
 		// Execute the handler and get the return value
-		returnValue = handler.call( this, event, handler.data );
+		result = handler.call(this, event);
 
 		// Handle the case of handlers returning false
-		if (returnValue === false) {
+		if (result === false) {
 			event.preventDefault();
 			event.stopPropagation();
 		}
 
 		// Stop this loop if immediate propagation is stopped
-		if (event.isImmediatePropagationStopped()) {
-			break;
-		}
-	}
+		if (event.isImmediatePropagationStopped()) { break; }
+	} // end of while
 
-	return returnValue;
+	return result;
 } // end of handle()
 
 
-/**
+/*!
  * A generic function that return false, used for callbacks
- * @private @function
- * @ignore
  *
- * @return {boolean} Return false
+ * @param {undefined}
+ * @return {boolean} Return false.
  */
-function returnFalse() {
-	return false;
-} // end of returnFalse()
+function returnFalse() { return false; }
 
 
-/**
+/*!
  * A generic function that return true, used for callbacks
- * @private @function
- * @ignore
  *
- * @returns {boolean} Return true
+ * @param {undefined}
+ * @returns {boolean} Return true.
  */
-function returnTrue() {
-	return true;
-} // end of returnTrue()
+function returnTrue() { return true; }
 
 
 // Create an "event" namespace into the framework (is independant)
 fab.event = {
-
 	/**
 	 * The events handlers cache
-	 * @type object
+	 * @type {object}
 	 */
-	cache: {},
+	_cache: {},
 
 
 	/**
-	 * A GUID to mark that an element have handlers in the cache
-	 * @type number
+	 * Retrieve the handlers cache for an element or an object
+	 * Will create a cache if the element doesn't have one yet.
+	 *
+	 * @param {element|object} element The element or object.
+	 * @return Return the cache for the element.
 	 */
-	guid: 0,
+	cache: function cache(element) {
+		var id = element[fab.event.expando]; // Try to retrieve the uid with the expando
+
+		// The element is not expanded yet
+		if (!id) {
+			// Use an UID to ad id
+			id = element[fab.event.expando] = ++fab.event.uid;
+
+			// Prepare the cache
+			fab.event._cache[id] = {
+				// Prepare the event types and handlers cache
+				handlers: {},
+
+				// Prepare the manager to makes sure we always have the right "this" keyword
+				manager: function manager(event) {
+					return handle.call(element, event);
+				}
+			};
+		}
+
+		return fab.event._cache[id];
+	}, // end of cache()
+
+
+	/**
+	 * An unique identifier
+	 * Used to link a DOM element to a JS object.
+	 * @type {string}
+	 */
+	expando: "_fab-" + (+new Date()),
 
 
 	/**
 	 * Add an handler for the given event types on the given element
-	 * @function
 	 *
-	 * @param {node|object} element The element on which to listen event (can be a node or an object)
-	 * @param {string} types The event types (can be multiple, separated by a space) to listen
-	 * @param {function} handler The function to launch when the event types are trigerred
-	 * @param {object} data The data to pass when calling the listener
+	 * @param {element|object} element The element on which to listen event (can be an element or an object).
+	 * @param {string} types The event types (can be multiple, separated by a space) to listen.
+	 * @param {function} handler The function to launch when the event types are trigerred.
+	 * @return {undefined} Return nothing.
 	 */
-	add: function( element, types, handler, data ) {
+	on: function on(element, types, handler) {
 		var
-			cache = getCache( element, true ), // Get the handlers cache for this element
-			type, i = 0; // Loop specific
+			cache = fab.event.cache(element),
+			type; // Loop specific
 
 		// Allow multiple events types separated by a space
-		types = types.replace( fab.rTrim, "" ).split( fab.rSplit ); // Trim first to avoid bad splitting
-
-		// Set a defaut handler in the case we don't need handler (custom events for IE)
-		handler = handler || returnFalse;
-		handler.data = data; // Save a reference to the data in this handler
+		types = types.replace(rTrim, "").split(rSplit); // Trim first to avoid bad splitting
 
 		// Loop through each event types
-		while ((type = types[i++])) {
+		while ((type = types.shift())) {
 			// Is there handlers for this type?
 			if (!cache.handlers[type]) {
 				// No, initialize
@@ -204,17 +180,17 @@ fab.event = {
 
 				// if DOM level 2 is supported, then use it
 				if (element.addEventListener) {
-					element.addEventListener( type, cache.handleManager, false );
+					element.addEventListener(type, cache.manager, false);
 				} else if (element.attachEvent) {
 					// Microsoft's old events implementation
-					element.attachEvent( "on" + type, cache.handleManager );
+					element.attachEvent("on" + type, cache.manager);
 				}
 			}
 
 			// Cache the handler for this type
-			cache.handlers[type].push( handler );
+			cache.handlers[type].push(handler);
 		} // end of while
-	}, // end of add()
+	}, // end of on()
 
 
 	/**
@@ -227,6 +203,9 @@ fab.event = {
 	 * @param {function} [handler=undefined] handler The function attached to be removed, remove all handlers if not provided
 	 */
 	remove: function( element, types, handler ) {
+		console.log("fab.event.remove");
+		return;
+
 		var
 			cache = getCache( element ),
 			type, i = 0, // Loop specific
@@ -314,34 +293,37 @@ fab.event = {
 
 	/**
 	 * Trigger an event type on the given element
-	 * @function
 	 *
-	 * @param {node|object} element The element on which to listen event (can be a node or an object)
-	 * @param {string|object} event The event type or event object to trigger
-	 *
-	 * @return @see #handle
+	 * @param {element|object} element The element triggering the event (can be a node or an object).
+	 * @param {string} type The event type to trigger.
+	 * @return {*} Return the value of the last handler executed or true if there were no handlers.
 	 */
-	trigger: function( element, event ) {
-		event = typeof event === "string" ? fab.Event( event ) : event;
-		return handle.call( element, event );
-	} // end of trigger()
+	trigger: function trigger(element, type) {
+		return handle.call(element, type);
+	}, // end of trigger()
 
-}; // end of event namespace
+
+	/**
+	 * An UID to mark that an element have handlers in the cache
+	 * @type {number}
+	 */
+	uid: 0
+}; // end of fab.event
 
 
 // Bind static references
-fab.bind    = fab.event.add;
-fab.unbind  = fab.event.remove;
+fab.on      = fab.event.on;
+fab.off     = fab.event.off;
 fab.trigger = fab.event.trigger;
 
 
 // Abstract an event with a custom Event class.
 // This is a copy/paste of the jQuery's implementation (don't remake the awesome).
 // @see <a href="https://github.com/jquery/jquery/blob/master/src/event.js">jQuery's event source</a>
-fab.Event = function( src ) {
+fab.Event = function(src) {
 	// Allow instantiation without the 'new' keyword
 	if (!(this instanceof fab.Event)) {
-		return new fab.Event( src );
+		return new fab.Event(src);
 	}
 
 	// src is an Event object
@@ -351,7 +333,7 @@ fab.Event = function( src ) {
 
 		// Events bubbling up the document may have been marked as prevented
 		// by a handler lower down the tree; reflect the correct value.
-		this.isDefaultPrevented = (src.defaultPrevented || src.returnValue === false || src.getPreventDefault && src.getPreventDefault()) ? returnTrue : returnFalse;
+		this.isDefaultPrevented = (src.defaultPrevented || src.defaultPrevented === undefined && src.getPreventDefault && src.getPreventDefault()) ? returnTrue : returnFalse;
 	} else {
 		// src is just a string, create a blank event
 		this.type = src;
@@ -362,53 +344,42 @@ fab.Event = function( src ) {
 	this.timeStamp = src && src.timeStamp || +new Date();
 
 	// Mark the event as fixed
-	this[ fab.expando ] = true;
-};
+	this[fab.event.expando] = true;
+}; // end of fab.Event()
+
 
 // This is the exact copy of the awesome jQuery.Event DOM 3 Events implementation
 // @see <a href="https://github.com/jquery/jquery/blob/master/src/event.js">jQuery's event source</a>
 // @see <a href="http://www.w3.org/TR/2003/WD-DOM-Level-3-Events-20030331/ecma-script-binding.html">DOM Level 3 Events ECMAScript Binding</a>
 fab.Event.prototype = {
+	isDefaultPrevented: returnFalse,
+	isPropagationStopped: returnFalse,
+	isImmediatePropagationStopped: returnFalse,
+
 	preventDefault: function() {
+		var e = this.originalEvent;
+
 		this.isDefaultPrevented = returnTrue;
 
-		var e = this.originalEvent;
-		if (!e) {
-			return;
-		}
-
-		// if preventDefault exists run it on the original event…
-		if (e.preventDefault) {
+		// if preventDefault exists run it on the original event
+		if (e && e.preventDefault) {
 			e.preventDefault();
-		} else {
-			// otherwise set the returnValue property of the original event to false (IE)
-			e.returnValue = false;
 		}
 	},
 
 	stopPropagation: function() {
+		var e = this.originalEvent;
+
 		this.isPropagationStopped = returnTrue;
 
-		var e = this.originalEvent;
-		if (!e) {
-			return;
-		}
-
-		// if stopPropagation exists run it on the original event…
-		if (e.stopPropagation) {
+		// if stopPropagation exists run it on the original event
+		if (e && e.stopPropagation) {
 			e.stopPropagation();
 		}
-
-		// otherwise set the cancelBubble property of the original event to true (IE)
-		e.cancelBubble = true;
 	},
 
 	stopImmediatePropagation: function() {
 		this.isImmediatePropagationStopped = returnTrue;
 		this.stopPropagation();
-	},
-
-	isDefaultPrevented: returnFalse,
-	isPropagationStopped: returnFalse,
-	isImmediatePropagationStopped: returnFalse
-};
+	}
+}; // end of fab.Event.prototype
