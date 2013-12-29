@@ -893,7 +893,8 @@ fab.extend({
 		}
 
 		// Prefer specialized method having the property's name
-		if (typeof this[property] === "function") {
+		// Prevent calling automatically created accessor's method (will cause infinite calls)
+		if (typeof this[property] === "function" && !this[property].accessor) {
 			this[property](value);
 		} else if (new RegExp(property).test(setterProperties)) {
 			// If we're allowed to set this property define the property and value in the _config hash
@@ -1099,35 +1100,37 @@ fab.extend({
 	} // end of trigger()
 }); // end of fab.extend()
 
+
+// Create getters and setters
+(function() {
+	var
+		properties = getterProperties.split(" "), // All of the properties
+		property, // Loop specific
+		obj = {}; // Will be used to extend fabuloos' prototype
+
+	// Create a closure for getter/setter on a property
+	function accessor(property) {
+		var fn = function() {
+			return this[arguments.length ? "set" : "get"](property, arguments[0]);
+		};
+
+		// Set a flag to later prevent set() to call fn() indefinitely
+		fn.accessor = true;
+		return fn;
+	}
+
+	// Loop through all properties
+	while ((property = properties.shift())) {
+		// Create an accessor only if not already created manually
+		if (!fab.prototype[property]) {
+			obj[property] = accessor(property);
+		}
+	} // end of while
+
+	// Extend fabuloos' prototype with these methods!
+	fab.extend(obj);
+}());
+
+
 // Expose
 window.fabuloos = window.fab = fab;
-
-/**
- * Exception class
- * @constructor
- *
- * @params {number} code The error code to create
- *
- * @returns {Exception} A new Exception instance
- */
-function Exception(code) {
-	this.name = "fabuloos error";
-	this.code = code;
-
-	// Loop through each property to find the static var related to this code
-	for (var prop in Exception) {
-		if (Exception[prop] === code) {
-			this.message = prop;
-		}
-	}
-} // end of Exception constructor
-
-Exception.prototype = new Error(); // Inherit from Error
-Exception.prototype.constructor = Exception; // Don't forget to correct the constructor
-
-// Mimic the DOMException error codes
-Exception.NOT_FOUND_ERR = 8;
-Exception.SYNTAX_ERR    = 12;
-
-// Expose
-fab.Exception  = Exception;
