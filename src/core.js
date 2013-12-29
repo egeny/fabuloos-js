@@ -578,7 +578,7 @@ fab.extend({
 			type; // Loop specific
 
 		// Support receiving object literals
-		if (arguments.length === 1) {
+		if (arguments[0] && arguments[0].constructor === Object) {
 			// Simply loop through the hash and call itself
 			for (type in arguments[0]) {
 				this.off(type, arguments[0][type]);
@@ -597,13 +597,10 @@ fab.extend({
 
 		// If we have a renderer, tell him to stop listening if there is no more handler for this/these type(s)
 		if (this._renderer) {
-			// Retrieve the cache
-			cache = fab.event.cache(this);
-
 			// Loop through the event types we were listening before removing some
 			while ((type = previously.shift())) {
 				// Check if the event type still exists
-				if (!cache.handler[type]) {
+				if (!cache.handlers[type]) {
 					// If not, tell the renderer to stop listening
 					this._renderer.unbind(type);
 				}
