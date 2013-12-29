@@ -543,14 +543,23 @@ fab.extend({
 
 	/**
 	 * Unregister an handler for a given event
+
+	 * @param {string} types The event type(s) to stop listening.
+	 * @param {function} handler The handler previously attached.
+	 * @return {fabuloos} Return the current instance to allow chaining.
 	 *
 	 * @param {string} types The event type(s) to stop listening.
-	 *   May be null (will remove all handlers).
+	 * @param {null} handler Passing `null` will remove all handlers associated to this/these type(s).
+	 * @return {fabuloos} Return the current instance to allow chaining.
+	 *
+	 * @param {null} types Passing null will remove the given handler for all types.
 	 * @param {function} handler The handler previously attached.
-	 *   May be null (will remove all handlers for the type).
 	 * @return {fabuloos} Return the current instance to allow chaining.
 	 *
 	 * @param {object} obj An hash of types and handlers to remove.
+	 * @return {fabuloos} Return the current instance to allow chaining.
+	 *
+	 * @param {undefined}
 	 * @return {fabuloos} Return the current instance to allow chaining.
 	 *
 	 * @example
@@ -583,9 +592,8 @@ fab.extend({
 			previously.push(type);
 		}
 
-		// TODO remove -> off
 		// Unregister this handler for this/these type(s)
-		fab.event.remove(this, types, handler);
+		fab.event.off(this, types, handler);
 
 		// If we have a renderer, tell him to stop listening if there is no more handler for this/these type(s)
 		if (this._renderer) {

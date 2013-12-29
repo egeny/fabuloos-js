@@ -194,29 +194,20 @@ fab.event = {
 
 
 	/**
-	 * Remove an handler for the given types on the given elements
-	 * @function
+	 * Remove an handler for the given types on the given element
 	 *
-	 * @param {node|object} element The element on which to listen event (can be a node or an object)
-	 * @param {string} [types=""] types The event types for which we want to remove event handlers.
-	 *   Can be multiple (separated by a space) or empty to remove the handler for all events
-	 * @param {function} [handler=undefined] handler The function attached to be removed, remove all handlers if not provided
+	 * @param {element|object} element The element where the event type is currently listening (can be an element or an object).
+	 * @param {string} types The event types (can be multiple, separated by a space) to stop listening.
+	 *   If a falsy value is passed, the handler will be removed for all types.
+	 * @param {function} handler The function attached to be removed, remove all handlers if not provided.
+	 * @return {undefined} Return nothing.
 	 */
-	remove: function( element, types, handler ) {
-		console.log("fab.event.remove");
-		return;
-
+	off: function off(element, types, handler) {
 		var
-			cache = getCache( element ),
-			type, i = 0, // Loop specific
-			handlers, j, count; // Loop specific
+			cache = fab.event.cache(element),
+			type, handlers, i; // Loop specific
 
-		// Don't bother if there is no event registered for this element
-		if (!cache) {
-			return;
-		}
-
-		// No types provided, remove all types
+		// No types provided, remove for all types
 		if (!types) {
 			types = "";
 			for (type in cache.handlers) {
@@ -225,70 +216,44 @@ fab.event = {
 		}
 
 		// Allow multiple events types separated by a space
-		types = types.replace( fab.rTrim, "" ).split( fab.rSplit ); // Trim first to avoid bad splitting
+		types = types ? types.replace(rTrim, "").split(rSplit) : []; // Trim first to avoid bad splitting
 
-		// Loop through event types
-		while ((type = types[i++])) {
+		// Loop through each event types
+		while ((type = types.shift())) {
+			handlers = cache.handlers[type];
+
 			// Don't bother if there is no handlers for this type
-			if (!cache.handlers[type]) {
-				continue;
+			if (!handlers) { continue; }
+
+			// If there is no specific handler to remove, remove them all
+			if (!handler) {
+				handlers.length = 0;
 			}
 
-			// Asking to remove a specific handler
-			if (handler) {
-				// Prepare a new handlers cache
-				handlers = [];
-
-				// Loop through the handlers cache to find the specific handler
-				for (j = 0, count = cache.handlers[type].length; j < count; j++) {
-					// Keep the other handlers
-					if (cache.handlers[type][j] !== handler) {
-						handlers.push( cache.handlers[type][j] );
-					}
+			i = handlers.length;
+			// Loop through the handlers to find the one to remove
+			while (i--) {
+				if (handlers[i] === handler) {
+					handlers.splice(i, 1); // Dump the handler
+					// Don't break since we may have more than once the handler in the cache
 				}
-
-				// Replace the old cache with the new one
-				cache.handlers[type] = handlers;
-			} else {
-				// Asking to remove all handlers
-				cache.handlers[type].length = 0;
-
-				// But re-initialize the custom events handler for IE
-				if (type === "dataavailable" || type === "losecapture") {
-					cache.handlers[type].push( returnFalse );
-				}
-			} // end of if (handler)
+			}
 
 			// Do we have to clean the handlers cache for this type?
-			if (!cache.handlers[type].length) {
+			if (!handlers.length) {
 				// Delete this cache entry
 				delete cache.handlers[type];
 
 				// Remove the handle manager for this type
 				if (element.removeEventListener) {
-					element.removeEventListener(type, cache.handleManager, false);
+					element.removeEventListener(type, cache.manager, false);
 				} else if (element.detachEvent) {
-					element.detachEvent("on" + type, cache.handleManager);
+					// Microsoft's old events implementation
+					element.detachEvent("on" + type, cache.manager);
 				}
-			} // end of if (!cache.handlers[type].length)
+			} // end of if (!handlers.length)
 		} // end of while
-
-		// Look if there is types left in the cache (to clean-up)
-		types = false;
-		for (type in cache.handlers) {
-			types = true;
-			break;
-		}
-
-		// If there is no events types left, clean the cache and the element
-		if (!types) {
-			// Remove this element from the cache
-			delete fab.event.cache[element[ fab.expando ]];
-
-			// Remove the element's expando
-			delete element[ fab.expando ];
-		}
-	}, // end of remove()
+	}, // end of off()
 
 
 	/**
