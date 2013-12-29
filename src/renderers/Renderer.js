@@ -57,7 +57,14 @@ var
 	 * A RegExp to retrieve a function's name
 	 * @type {RegExp}
 	 */
-	rFunction = /function (\w+)/;
+	rFunction = /function (\w+)/,
+
+	/**
+	 * A collection of regexp used to split and trim
+	 * @type {RegExp}
+	 */
+	rSplit = /\s+/,
+	rTrim  = /^\s+|\s+$/g;
 
 
 /**
@@ -269,8 +276,9 @@ Renderer.extend({
 			renderer  = this.constructor, // Retrieve the renderer's "class"
 			instances = Renderer.instances[renderer.name]; // Retrieve the instances cache for this kind of renderers
 
-		// Save a reference to the configuration (do NOT modify this hash)
-		this.config = config;
+		// Prepare the instance
+		this.config = config; // Save a reference to the configuration (do NOT modify this hash)
+		this.events = {}; // A cache to remember which event type the renderer is already listening
 
 		// This renderer was never instanciated, initialize a cache
 		if (!instances) {
@@ -286,12 +294,37 @@ Renderer.extend({
 		// Store this instance in the cache (even if it already exists)
 		instances[config.id] = this;
 
-		// TODO
-		// Handler?
-		// Cache?
-
 		return this; // Chaining
 	}, // end of init()
+
+
+	/**
+	 * Ask the element to listen for an event type
+	 *
+	 * @param {string} types The event type(s) to listen.
+	 *   You may provide multiple event types by separating them with a space.
+	 * @return {Renderer} Return the current instance to allow chaining.
+	 */
+	bind: function bind(types) {
+		var type; // Loop specific
+
+		// Allow multiple events types separated by a space
+		types = types.replace(rTrim, "").split(rSplit); // Trim first to avoid bad splitting
+
+		// Loop through each event types
+		while ((type = types.shift())) {
+			// Is this renderer already listening for this type?
+			// Is there an API to call?
+			// Is there an unbind method in the API?
+			if (!this.events[type] && this.api && typeof this.api.bind === "function") {
+				// Ask the renderer to actually bind this type
+				this.api.bind(type);
+
+				// Mark this type as "currently listening"
+				this.events[type] = true;
+			}
+		} // end of while
+	}, // end of bind()
 
 
 	/**
@@ -363,11 +396,57 @@ Renderer.extend({
 				return this.api[property];
 			}
 		} else {
+			// TODO
 			console.log("renderer not ready");
 			// If the element doesn't exists (not ready or not in the DOM), store properties and values in a cache
 			//this.cache.properties[property] = value;
 		}
-	} // end of set()
+	}, // end of set()
+
+
+	/**
+	 * Trigger an event
+	 *
+	 * @param {string} type The event type to dispatch
+	 * @return {Renderer} Return the current instance to allow chaining.
+	 */
+	trigger: function trigger(type) {
+		// Check if we have a triggerer (we never know)
+		if (this.triggerer) {
+			this.triggerer(type);
+		}
+
+		return this; // Chaining
+	}, // end of trigger()
+
+
+	/**
+	 * Stop listening for an event type
+	 *
+	 * @param {string} types The event type(s) to listen.
+	 *   You may provide multiple event types by separating them with a space.
+	 * @return {Renderer} Return the current instance to allow chaining.
+	 */
+	unbind: function unbind(types) {
+		var type; // Loop specific
+
+		// Allow multiple events types separated by a space
+		types = types.replace(rTrim, "").split(rSplit); // Trim first to avoid bad splitting
+
+		// Loop through each event types
+		while ((type = types.shift())) {
+			// Is this renderer listening for this type?
+			// Is there an API to call?
+			// Is there an unbind method in the API?
+			if (this.events[type] && this.api && typeof this.api.unbind === "function") {
+				// Ask the renderer to actually unbind this type
+				this.api.unbind(type);
+
+				// Clean the cache for this event type
+				delete this.events[type];
+			}
+		} // end of while
+	} // end of unbind()
 }); // end of Renderer.extend()
 
 // Expose

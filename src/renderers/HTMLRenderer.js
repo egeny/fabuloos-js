@@ -118,6 +118,8 @@ HTMLRenderer.extend({
 	 * @return {HTMLRenderer} Return the current instance to allow chaining.
 	 */
 	replace: function replace(element) {
+		var triggerer = this.triggerer;
+
 		// Check if we are extending an existing <audio> or <video>
 		if (element && rMedia.test(element.nodeName)) {
 			// Simply use the element
@@ -134,6 +136,16 @@ HTMLRenderer.extend({
 
 		// With <audio> or <video> the API is the element itself
 		this.api = this.element;
+
+		// Map the bind method to addEventListener
+		this.api.bind = function(type) {
+			this.addEventListener(type, triggerer, false);
+		};
+
+		// Map the bind method to addEventListener
+		this.api.unbind = function(type) {
+			this.removeEventListener(type, triggerer, false);
+		};
 
 		// Fix implementation problems
 		this.fix();
