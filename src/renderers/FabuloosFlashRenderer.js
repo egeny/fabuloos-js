@@ -1,43 +1,25 @@
 /*global Renderer, FlashRenderer */
 
 /**
- * FabuloosFlashRenderer
+ * The FabuloosFlashRenderer class
  * @constructor
  *
- * @param {object} config The renderer config
- *
- * @returns {FabuloosFlashRenderer} A new FabuloosFlashRenderer instance
+ * @see #Renderer.init() for signatures
  */
-function FabuloosFlashRenderer( config ) {
-	this.config = Renderer.merge( config, FabuloosFlashRenderer.config ); // Merge the config with defaults
-
-	return FlashRenderer.init( this );
-} // end of FabuloosFlashRenderer constructor
-
-
-// Set the constructor name if it doesn't exists (IE)
-// Beware to only set it if undefined, this property is read-only in strict mode
-if (!FabuloosFlashRenderer.name) {
-	FabuloosFlashRenderer.name = "FabuloosFlashRenderer";
-}
-
-FabuloosFlashRenderer.prototype = new FlashRenderer(); // Inherit from FlashRenderer
-FabuloosFlashRenderer.prototype.constructor = FabuloosFlashRenderer; // Don't forget to correct the constructor
+function FabuloosFlashRenderer(config) {
+	// Do the basic renderers' needed stuff
+	this.init(config);
+} // end of FabuloosFlashRenderer()
 
 
 /**
- * Default plugin configuration
- * @static
- * @type {object}
+ * The URL of the SWF file
+ * @type {string}
  */
-FabuloosFlashRenderer.config = {
-	data: "FabuloosFlashRenderer.swf"
-};
-
+FabuloosFlashRenderer.swf = "FabuloosFlashRenderer.swf";
 
 /**
  * Supported MIME types
- * @static
  * @type {object}
  */
 FabuloosFlashRenderer.types = {
@@ -57,61 +39,65 @@ FabuloosFlashRenderer.types = {
 };
 
 
-/**
- * Check if a given URL is readable by this renderer
- * @static @function
- *
- * @param {string} url The url to check
- *
- * @returns {string} Returns "probably" if the URL's protocol is RTMP, call Renderer.canPlay otherwise
- * @see Renderer.canPlay
- */
-FabuloosFlashRenderer.canPlay = function( url ) {
-	return (/^rtmp/).test( url ) ? "probably" : Renderer.canPlay.call( this, url );
-};
+var
+	/*!
+	 * A RegExp used to check if an URL is an RTMP stream URL
+	 * @type {RegExp}
+	 */
+	rRTMP = /^rtmp/i;
 
 
-/**
- * Static reference to Renderer.canPlayType
- * @static
- * @type {function}
- */
-FabuloosFlashRenderer.canPlayType = Renderer.canPlayType;
+// FabuloosFlashRenderer can inherit and will inherit from Renderer
+FabuloosFlashRenderer.inherit = Renderer.inherit;
+FabuloosFlashRenderer.inherit(Renderer);
 
+// FabuloosFlashRenderer can extend and will extend itself (statically)
+FabuloosFlashRenderer.extend = Renderer.extend;
+FabuloosFlashRenderer.extend(FabuloosFlashRenderer, {
+	/**
+	 * Check if a given URL is readable by this renderer
+	 *
+	 * @param {string} url The url to check
+	 * @param {string|array} type The MIME type(s) associated to this URL
+	 * @return {string} Return "probably" or "maybe" if the MIME type is supported, "" (empty string) otherwise
+	 */
+	canPlay: function canPlay(url, type) {
+		// Test for RTMP or use the basic Renderer's canPlay
+		return rRTMP.test(url) ? "probably" : Renderer.canPlay.apply(this, arguments);
+	}, // end of Renderer.canPlay()
 
-/**
- * Will this renderer be supported on this browser?
- * @static
- * @type {function}
- */
-FabuloosFlashRenderer.isSupported = FlashRenderer.isSupported;
-
-// If supported, append this renderer to the supported renderers stack
-if (FabuloosFlashRenderer.isSupported) {
-	Renderer.supported.push( FabuloosFlashRenderer );
-}
-
-
-// Extend the FabuloosFlashRenderer prototype
-Renderer.extend(FabuloosFlashRenderer.prototype, {
 
 	/**
-	 * Expose a property's value to the DOM.
-	 * Used by Flash to set a DOM property value on itself
-	 * @function
-	 *
-	 * @param {string} property The property's value to set
-	 * @param {*} value The new property value
+	 * Static reference to Renderer.canPlayType
+	 * @see #Renderer.canPlayType()
 	 */
-	exposeProperty: function( property, value ) {
-		// TODO: Refactoring needed
-		this.element[property] = value;
-	}, // end of exposeProperty()
+	canPlayType: Renderer.canPlayType,
 
-	// Override API shorthands
-	play: Renderer.createShorthand( "_play" ) // this.element.play() is reserved by ActiveX, use _play
 
-}); // end of Renderer.extend()
+	/**
+	 * Will this renderer be supported on this browser?
+	 * @type {boolean}
+	 */
+	isSupported: FlashRenderer.isSupported
+});
 
-// Expose
-window.FabuloosFlashRenderer = FabuloosFlashRenderer;
+
+// Extend the FabuloosFlashRenderer's prototype
+FabuloosFlashRenderer.extend({
+	play: Renderer.shorthand("_play"), // element.play() is reserved by ActiveX, use _play
+
+	ready: function ready() {
+		this.isReady = true;
+		console.log("ready", this);
+	},
+
+	/**
+	 * Static reference to FlashRenderer.replace
+	 * @see #FlashRenderer.replace()
+	 */
+	replace: FlashRenderer.replace
+}); // end of FabuloosFlashRenderer.extend()
+
+
+// Register this renderer
+Renderer.register(FabuloosFlashRenderer);

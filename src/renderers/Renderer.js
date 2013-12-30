@@ -1,4 +1,5 @@
 /*jshint newcap: false */
+/*global ActiveXObject */
 
 /**
  * The base Renderer class
@@ -60,11 +61,17 @@ var
 	rFunction = /function (\w+)/,
 
 	/**
-	 * A collection of regexp used to split and trim
+	 * A collection of RegExp used to split and trim
 	 * @type {RegExp}
 	 */
 	rSplit = /\s+/,
-	rTrim  = /^\s+|\s+$/g;
+	rTrim  = /^\s+|\s+$/g,
+
+	/**
+	 * A RegExp to retrieve version's numbers
+	 * @type {RegExp}
+	 */
+	rVersion = /\d+/g;
 
 
 /**
@@ -217,6 +224,67 @@ Renderer.extend(Renderer, {
 		this.prototype = new base(); // Inherit from the base
 		this.prototype.constructor = this; // Correct the constructor
 	}, // end of Renderer.inherit()
+
+
+	/**
+	 * Utility function to check if a plugin is supported
+	 *
+	 * @param {object} info The plugin info (minVersion, plugin name and activeX name)
+	 * @return {boolean} Is this plugin supported?
+	 */
+	isPluginSupported: function isPluginSupported(info) {
+		var
+			version, // The plugin version
+			minVersion = info.minVersion, // The min plugin version
+			ax, // ActiveX
+			diff, // The difference between two version, used to check versions
+			i = 0, count; // Loop specific
+
+		// Check if the plugin exists on good browsers
+		if (navigator.plugins && navigator.plugins[info.plugin]) {
+			// It seems. Get the description (include the version)
+			version = navigator.plugins[info.plugin].description;
+		} else if (window.ActiveXObject) {
+			// Bad browsers use ActiveX, use a try/catch to avoid error when plugin doesn't exists
+			try {
+				ax = new ActiveXObject(info.activex);
+
+				// Check if this ActiveX has a IsVersionSupported
+				try {
+					// IsVersionSupported seems to be an ActiveX function
+					if (typeof ax.IsVersionSupported(minVersion) === "boolean") {
+						return ax.IsVersionSupported(minVersion);
+					}
+				} catch (e2) {}
+
+				// Otherwise try to retrieve the version
+				version = ax.getVariable("$version");
+			} catch (e1) {}
+		}
+
+		// A version was found
+		if (version) {
+			// Split the versions
+			version    = version.match(rVersion);
+			minVersion = minVersion.match(rVersion);
+
+			// Loop through the minVersion to check with the current installed
+			for (count = minVersion.length; i < count; i++) {
+				// Calculate the difference between installed and target version
+				diff = (parseInt(version[i], 10) || 0) - (parseInt(minVersion[i], 10) || 0);
+
+				// The installed match the target version, continue to next version number
+				if (diff === 0) { continue; }
+
+				// The installed doesn't match, so it can be greater or lower, just return this result
+				return (diff > 0);
+			}
+
+			return true; // The minVersion === version
+		}
+
+		return false; // No version found or plugin not installed
+	}, // end of Renderer.isPluginSupported()
 
 
 	/**
