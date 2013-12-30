@@ -6,7 +6,7 @@ var
 	properties = "bubbles cancelable currentTarget eventPhase relatedTarget target timeStamp".split(" "),
 
 	/**
-	 * A collection of regexp used to split and trim
+	 * A collection of RegExp used to split and trim
 	 * @type {RegExp}
 	 */
 	rSplit = /\s+/,
@@ -33,7 +33,8 @@ function fix(event) {
 	event = new fab.Event(original);
 
 	// Copy the accepted original's properties in the event
-	while (i--) {
+	// We don't have to copy if the original was a string
+	while (!original.substr && i--) {
 		property = properties[i];
 
 		// Copy only if the property was set

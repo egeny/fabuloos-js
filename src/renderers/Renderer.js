@@ -392,6 +392,8 @@ Renderer.extend({
 				this.events[type] = true;
 			}
 		} // end of while
+
+		return this; // Chaining
 	}, // end of bind()
 
 
@@ -474,17 +476,17 @@ Renderer.extend({
 
 	/**
 	 * Trigger an event
+	 * Beware to return nothing since this method can be called from ExternalInterface
+	 * and returning the whole instance will slow down *a lot* flash
 	 *
 	 * @param {string} type The event type to dispatch
-	 * @return {Renderer} Return the current instance to allow chaining.
+	 * @return {undefined} Return nothing.
 	 */
 	trigger: function trigger(type) {
 		// Check if we have a triggerer (we never know)
 		if (this.triggerer) {
 			this.triggerer(type);
 		}
-
-		return this; // Chaining
 	}, // end of trigger()
 
 
@@ -514,6 +516,8 @@ Renderer.extend({
 				delete this.events[type];
 			}
 		} // end of while
+
+		return this; // Chaining
 	} // end of unbind()
 }); // end of Renderer.extend()
 

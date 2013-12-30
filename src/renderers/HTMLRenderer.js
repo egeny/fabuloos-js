@@ -101,6 +101,8 @@ HTMLRenderer.extend({
 
 		// This element is now fixed
 		this.element.fixed = true;
+
+		return this; // Chaining
 	}, // end of fix()
 
 
@@ -118,7 +120,9 @@ HTMLRenderer.extend({
 	 * @return {HTMLRenderer} Return the current instance to allow chaining.
 	 */
 	replace: function replace(element) {
-		var triggerer = this.triggerer;
+		var
+			triggerer = this.triggerer, // A reference to the fabuloos' instance triggerer
+			prop; // Loop specific
 
 		// Check if we are extending an existing <audio> or <video>
 		if (element && rMedia.test(element.nodeName)) {
@@ -129,10 +133,13 @@ HTMLRenderer.extend({
 			this.element = document.createElement("video");
 
 			// Set the element's attributes according to configuration
-			for (var prop in this.config) {
+			for (prop in this.config) {
 				this.element[prop] = this.config[prop];
 			}
 		}
+
+		// We don't need the config anymore
+		delete this.config;
 
 		// With <audio> or <video> the API is the element itself
 		this.api = this.element;
