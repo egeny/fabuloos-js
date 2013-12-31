@@ -38,15 +38,6 @@ FabuloosFlashRenderer.types = {
 	"audio/mp3": "maybe"
 };
 
-
-var
-	/*!
-	 * A RegExp used to check if an URL is an RTMP stream URL
-	 * @type {RegExp}
-	 */
-	rRTMP = /^rtmp/i;
-
-
 // FabuloosFlashRenderer can inherit and will inherit from Renderer
 FabuloosFlashRenderer.inherit = Renderer.inherit;
 FabuloosFlashRenderer.inherit(Renderer);
@@ -56,14 +47,11 @@ FabuloosFlashRenderer.extend = Renderer.extend;
 FabuloosFlashRenderer.extend(FabuloosFlashRenderer, {
 	/**
 	 * Check if a given URL is readable by this renderer
-	 *
-	 * @param {string} url The url to check
-	 * @param {string|array} type The MIME type(s) associated to this URL
-	 * @return {string} Return "probably" or "maybe" if the MIME type is supported, "" (empty string) otherwise
+	 * @see #Renderer.canPlay()
 	 */
 	canPlay: function canPlay(url, type) {
 		// Test for RTMP or use the basic Renderer's canPlay
-		return rRTMP.test(url) ? "probably" : Renderer.canPlay.apply(this, arguments);
+		return FabuloosFlashRenderer.rRTMP.test(url) ? "probably" : Renderer.canPlay.apply(this, arguments);
 	}, // end of Renderer.canPlay()
 
 
@@ -78,7 +66,14 @@ FabuloosFlashRenderer.extend(FabuloosFlashRenderer, {
 	 * Will this renderer be supported on this browser?
 	 * @type {boolean}
 	 */
-	isSupported: FlashRenderer.isSupported
+	isSupported: FlashRenderer.isSupported,
+
+
+	/*!
+	 * A RegExp used to check if an URL is an RTMP stream URL
+	 * @type {RegExp}
+	 */
+	rRTMP: /^rtmp/i
 });
 
 

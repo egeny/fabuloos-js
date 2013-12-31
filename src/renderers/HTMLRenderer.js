@@ -12,19 +12,11 @@ function HTMLRenderer(config) {
 } // end of HTMLRenderer()
 
 
-var
-	/*!
-	 * A RegExp used to test if an element is <audio> or <video>
-	 * @type {RegExp}
-	 */
-	rMedia = /audio|video/i,
-
-	/*!
-	 * Create a `<video>` in order to test browser's support
-	 * @type {Element}
-	 */
-	tester = document.createElement("video");
-
+/*!
+ * Create a `<video>` in order to test browser's support
+ * @type {Element}
+ */
+HTMLRenderer.tester = document.createElement("video");
 
 // HTMLRenderer can inherit and will inherit from Renderer
 HTMLRenderer.inherit = Renderer.inherit;
@@ -42,12 +34,10 @@ HTMLRenderer.extend(HTMLRenderer, {
 
 	/**
 	 * Check if a given MIME type is readable by this renderer
-	 *
-	 * @param {string} type The MIME type to check
-	 * @return {string} Returns "maybe" or "probably" is the MIME type is supported, "" otherwise
+	 * @see #Renderer.canPlay()
 	 */
 	canPlayType: function canPlayType(type) {
-		return HTMLRenderer.isSupported ? tester.canPlayType(type) : "";
+		return HTMLRenderer.isSupported ? HTMLRenderer.tester.canPlayType(type) : "";
 	}, // end of HTMLRenderer.canPlayType()
 
 
@@ -55,7 +45,14 @@ HTMLRenderer.extend(HTMLRenderer, {
 	 * Will this renderer be supported on this browser?
 	 * @type {boolean}
 	 */
-	isSupported: !!tester.canPlayType
+	isSupported: !!HTMLRenderer.tester.canPlayType,
+
+
+	/*!
+	 * A RegExp used to test if an element is <audio> or <video>
+	 * @type {RegExp}
+	 */
+	rMedia: /audio|video/i
 }); // end of HTMLRenderer.extend(HTMLRenderer)
 
 
@@ -108,9 +105,7 @@ HTMLRenderer.extend({
 
 	/**
 	 * Replace an element with the renderer's markup
-	 *
-	 * @param {Element} The element to replace.
-	 * @return {HTMLRenderer} Return the current instance to allow chaining.
+	 * @see #Renderer.replace()
 	 */
 	replace: function replace(element) {
 		var
@@ -118,7 +113,7 @@ HTMLRenderer.extend({
 			prop; // Loop specific
 
 		// Check if we are extending an existing <audio> or <video>
-		if (element && rMedia.test(element.nodeName)) {
+		if (element && HTMLRenderer.rMedia.test(element.nodeName)) {
 			// Simply use the element
 			this.element = element;
 		} else {
