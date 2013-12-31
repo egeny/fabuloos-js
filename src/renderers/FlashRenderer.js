@@ -67,9 +67,10 @@ FlashRenderer.extend(FlashRenderer, {
 				type:   "application/x-shockwave-flash", // Flash's MIME type
 				data:   this.constructor.swf // The URL of the SWF
 			},
-			params = {}, // The <param>s to create
-			object = document.createElement("object"), // The <object> !
-			attribute, name, param; // Loop specific
+			flashvars = [], // The flashvars, used to transmit the rest of the config
+			params    = {}, // The <param>s to create
+			object    = document.createElement("object"), // The <object> !
+			attribute, property, name, param; // Loop specific
 
 		// Copy FlashRenderer.params, we might want to add a param later
 		Renderer.extend(params, FlashRenderer.params);
@@ -85,6 +86,19 @@ FlashRenderer.extend(FlashRenderer, {
 		// Set the attributes
 		for (attribute in attributes) {
 			object[attribute] = attributes[attribute];
+		}
+
+		// Set the flashvars
+		for (property in this.config) {
+			// Ignore properties we already defined in the attributes
+			if (property in attributes) { continue; }
+
+			flashvars.push(property + "=" + this.config[property]);
+		}
+
+		// Add a param if we have some flashvars
+		if (flashvars.length) {
+			params.flashvars = flashvars.join("&");
 		}
 
 		// Create the <param>s and append them
