@@ -453,7 +453,7 @@ Renderer.extend({
 	ready: function ready(callback) {
 		// If the renderer is already ready, simply launch the callback
 		if (this.isReady) {
-			return (typeof callback === "function") ? callback() && undefined : undefined;
+			return (typeof callback === "function") ? callback.call(this) && undefined : undefined;
 		}
 
 		// If we are receiving a callback, simply push it to the stack
@@ -463,7 +463,7 @@ Renderer.extend({
 
 		// Loop through the callbacks and launch them
 		while (this.callbacks && (callback = this.callbacks.shift())) {
-			callback();
+			callback.call(this);
 		}
 
 		// We don't need the callbacks stack anymore
