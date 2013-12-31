@@ -513,7 +513,6 @@ fab.extend({
 
 			// Analyze the available sources
 			this.src(this._config.src);
-			delete this._config.src; // Delete the source since we doesn't need it now
 		} // end of if
 
 		return this; // Chaining
@@ -728,8 +727,8 @@ fab.extend({
 		// Keep a reference of the element
 		this._element = this._renderer.element;
 
-		// Attach all listeners
-		this.attach();
+		// Attach all listeners when the renderer is ready
+		this._renderer.ready(this.closure("attach"));
 
 		return this; // Chaining
 	}, // end of renderer()
