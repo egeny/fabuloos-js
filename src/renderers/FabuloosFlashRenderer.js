@@ -86,10 +86,6 @@ FabuloosFlashRenderer.extend(FabuloosFlashRenderer, {
 FabuloosFlashRenderer.extend({
 	play: Renderer.shorthand("_play"), // element.play() is reserved by ActiveX, use _play
 
-	ready: function ready() {
-		this.isReady = true;
-		console.log("ready", this);
-	},
 
 	/**
 	 * Static reference to FlashRenderer.replace

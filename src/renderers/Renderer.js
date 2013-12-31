@@ -345,8 +345,9 @@ Renderer.extend({
 			instances = Renderer.instances[renderer.name]; // Retrieve the instances cache for this kind of renderers
 
 		// Prepare the instance
-		this.config = config; // Save a reference to the configuration (do NOT modify this hash)
-		this.events = {}; // A cache to remember which event type the renderer is already listening
+		this.callbacks = []; // The callbacks to launch when the renderer is ready
+		this.config    = config; // Save a reference to the configuration (do NOT modify this hash)
+		this.events    = {}; // A cache to remember which event type the renderer is already listening
 
 		// This renderer was never instanciated, initialize a cache
 		if (!instances) {
@@ -440,6 +441,40 @@ Renderer.extend({
 			return (typeof this.api.get === "function") ? this.api.get(property) : this.api[property];
 		}
 	}, // end of get()
+
+
+	/**
+	 * Add a callback to launch when ready or set this renderer as ready
+	 *
+	 * @param {function} callback The callcack to add to the stack of callbacks to launch when ready.
+	 * @return {boolean|undefined} When adding a callback, return `true` if the callback is correctly registered, `false` if it is not a function.
+	 *   Otherwise, return `undefined`.
+	 */
+	ready: function ready(callback) {
+		// If the renderer is already ready, simply launch the callback
+		if (this.isReady) {
+			return (typeof callback === "function") ? callback() && undefined : undefined;
+		}
+
+		// If we are receiving a callback, simply push it to the stack
+		if (callback) {
+			return (typeof callback === "function") ? !!this.callbacks.push(callback) : false;
+		}
+
+		// Loop through the callbacks and launch them
+		while (this.callbacks && (callback = this.callbacks.shift())) {
+			callback();
+		}
+
+		// We don't need the callbacks stack anymore
+		delete this.callbacks;
+
+		// We don't need the config anymore
+		delete this.config;
+
+		// This renderer is now ready
+		this.isReady = true;
+	}, // end of ready()
 
 
 	/**
