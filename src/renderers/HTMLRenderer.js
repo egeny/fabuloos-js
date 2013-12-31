@@ -107,13 +107,6 @@ HTMLRenderer.extend({
 
 
 	/**
-	 * HTMLRenderer are always ready
-	 * @type {boolean}
-	 */
-	isReady: true,
-
-
-	/**
 	 * Replace an element with the renderer's markup
 	 *
 	 * @param {Element} The element to replace.
@@ -138,9 +131,6 @@ HTMLRenderer.extend({
 			}
 		}
 
-		// We don't need the config anymore
-		delete this.config;
-
 		// With <audio> or <video> the API is the element itself
 		this.api = this.element;
 
@@ -162,6 +152,9 @@ HTMLRenderer.extend({
 			// Replace the element with the new one
 			element.parentNode.replaceChild(this.element, element);
 		}
+
+		// The renderer is now ready
+		this.ready();
 
 		return this; // Chaining
 	} // end of replace()
