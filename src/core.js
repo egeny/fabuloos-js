@@ -74,7 +74,7 @@ var
 	 * @type {object}
 	 */
 	setterPriorities = {
-		first: "element",
+		first: "on element",
 		last:  "src"
 	},
 
@@ -273,7 +273,6 @@ fab.extend({
 			}
 		}
 
-		// Try to retrieve an element to base on
 		/*!
 		 * Try to retrieve an element to base on
 		 * If none, we're creating a new player (the element should be defined later)
@@ -686,6 +685,8 @@ fab.extend({
 	 * @return {Renderer|undefined} Return the current renderer.
 	 */
 	renderer: function renderer(_renderer) {
+		var instance = this;
+
 		// No renderer received, acting like a getter
 		if (!_renderer) {
 			return this._renderer;
@@ -701,6 +702,9 @@ fab.extend({
 			// TODO: Trigger a better event
 			return this.trigger("error");
 		}
+
+		// Dispatch a "renderer.changing" event
+		this.trigger("renderer.changing");
 
 		// Makes sure the renderer will receive an ID and a size (mandatory for most of the renderers)
 		this._config.id     = this._id;
@@ -724,11 +728,17 @@ fab.extend({
 		// Replace the old renderer markup
 		this._renderer.replace(this._element);
 
-		// Keep a reference of the element
-		this._element = this._renderer.element;
+		// Wait for the renderer to be ready
+		this._renderer.ready(function() {
+			// Keep a reference to the element
+			instance._element = this.element;
 
-		// Attach all listeners when the renderer is ready
-		this._renderer.ready(this.closure("attach"));
+			// Attach all listeners
+			instance.attach();
+
+			// Dispatch a "rendererready" event
+			instance.trigger("renderer.ready");
+		});
 
 		return this; // Chaining
 	}, // end of renderer()
@@ -1053,6 +1063,7 @@ fab.extend({
 
 				// This renderer seems to be able to play this source
 				if (source.solutions[renderer.name]) {
+					this._config.src = source.src; // FIXME
 					return this.renderer(renderer); // Change the renderer for this one
 				}
 			} // end of for

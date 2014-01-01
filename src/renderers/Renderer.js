@@ -399,6 +399,28 @@ Renderer.extend({
 
 
 	/**
+	 * Create a closure to launch a method on the current instance
+	 *
+	 * @param {string} method The method to launch.
+	 * @param {*} [...] The other arguments to pass to the method.
+	 * @return {function} Return a closure which will call the method.
+	 */
+	closure: function closure(method) {
+		var
+			that = this, // Save a reference to this instance
+			args = Array.prototype.slice.call(arguments); // Convert arguments to a real array
+
+		// Remove the first argument (the method name)
+		args.shift();
+
+		return function closure() {
+			// Call the method (if it exists), pass the arguments (args and these arguments)
+			return that[method] ? that[method].apply(that, args.concat(Array.prototype.slice.call(arguments))) : undefined;
+		};
+	}, // end of closure()
+
+
+	/**
 	 * Destroy the instance
 	 * Will simply remove itself from the cache.
 	 *
@@ -433,7 +455,7 @@ Renderer.extend({
 	 * Get a property's value
 	 *
 	 * @param {string} property The property's value to get.
-	 * @return {*} Return the property's value.
+	 * @return {*|undefined} Return the property's value or undefined if the renderer isn't ready.
 	 */
 	get: function get(property) {
 		// Let the time to the renderer to finish initializing
@@ -482,29 +504,24 @@ Renderer.extend({
 	 *
 	 * @param {string} property The property to change.
 	 * @param {*} value The new property's value.
-	 * @return {*} Return the value corrected by the renderer.
+	 * @return {*|undefined} Return the value corrected by the renderer or undefined if the renderer isn't ready.
 	 */
 	set: function set(property, value) {
-		// Check if the renderer is ready
-		if (this.isReady) {
-			// Use the set method of the element (plugins) if exists
-			if (typeof this.api.set === "function") {
-				return this.api.set(property, value);
-			} else {
-				// Otherwise try to set the property in the api
-				// This may fail sometimes depending on the properties (ex: setting currentTime too soon)
-				try {
-					this.api[property] = value;
-				} catch (e) {}
+		// Don't bother if the renderer isn't ready
+		if (!this.isReady) { return; }
 
-				// Return the corrected value
-				return this.api[property];
-			}
+		// Use the set method of the element (plugins) if exists
+		if (typeof this.api.set === "function") {
+			return this.api.set(property, value);
 		} else {
-			// TODO
-			console.log("renderer not ready");
-			// If the element doesn't exists (not ready or not in the DOM), store properties and values in a cache
-			//this.cache.properties[property] = value;
+			// Otherwise try to set the property in the api
+			// This may fail sometimes depending on the properties (ex: setting currentTime too soon)
+			try {
+				this.api[property] = value;
+			} catch (e) {}
+
+			// Return the corrected value
+			return this.api[property];
 		}
 	}, // end of set()
 
