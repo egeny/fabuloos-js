@@ -159,6 +159,8 @@ YoutubeRenderer.extend({
 	 * @return {undefined} Return nothing.
 	 */
 	handleStateChange: function handleStateChange(state) {
+		state = state.data || state; // iframe and flash events are differents
+
 		// TODO: implement the required events
 		switch (state) {
 			case -1: // Unstarted
