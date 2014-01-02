@@ -971,9 +971,6 @@ fab.extend({
 	 * @return {object} Return the width and height of the player.
 	 */
 	size: function size(property, value) {
-		// get = computed
-		// set = this._element.width
-
 		// Support receiving object literals
 		if (arguments[0] && arguments[0].constructor === Object) {
 			// Loop through the received properties
