@@ -148,7 +148,7 @@ function measure(element, property) {
 	element["scroll" + property.charAt(0).toUpperCase() + property.slice(1)];
 
 	return parseInt(value, 10) || 0;
-} // end of measure
+} // end of measure()
 
 
 /**
@@ -224,8 +224,8 @@ fab.extend(fab, {
 	/**
 	 * Create a closure calling a method on the renderer
 	 *
-	 * @param {string} method The method name to call
-	 * @return {function} A closure calling the method
+	 * @param {string} method The method name to call.
+	 * @return {function} A closure calling the method.
 	 */
 	shorthand: function shorthand(method) {
 		return function() {
@@ -394,7 +394,7 @@ fab.extend({
 	 * An alias for the #set() method
 	 */
 	config: function config() {
-		return this.set.apply(this, arguments);
+		return arguments.length ? this.set.apply(this, arguments) : this._config;
 	}, // end of config()
 
 
@@ -577,7 +577,7 @@ fab.extend({
 
 	/**
 	 * Unregister an handler for a given event
-
+	 *
 	 * @param {string} types The event type(s) to stop listening.
 	 * @param {function} handler The handler previously attached.
 	 * @return {fabuloos} Return the current instance to allow chaining.
@@ -586,7 +586,7 @@ fab.extend({
 	 * @param {null} handler Passing `null` will remove all handlers associated to this/these type(s).
 	 * @return {fabuloos} Return the current instance to allow chaining.
 	 *
-	 * @param {null} types Passing null will remove the given handler for all types.
+	 * @param {null} types Passing `null` will remove the given handler for all types.
 	 * @param {function} handler The handler previously attached.
 	 * @return {fabuloos} Return the current instance to allow chaining.
 	 *

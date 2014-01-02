@@ -150,25 +150,6 @@ return;
 	} // end of every()
 
 
-
-	/**
-case "height":
-case "width":
-	// Don't bother if we haven't any element to measure
-	if (!this.element) { return 0; }
-
-	value = window.getComputedStyle ?
-	// Pass a second argument (null) to getComputedStyle for compatibility reasons
-	// @see https://developer.mozilla.org/en-US/docs/DOM/window.getComputedStyle
-	window.getComputedStyle(this.element, null).getPropertyValue(property) :
-	// Use the scrollWidth/scrollHeight property since it is calculated in a different way in IE
-	this.element["scroll" + property.charAt(0).toUpperCase() + property.slice(1)];
-
-	return parseInt(value, 10);
-	 */
-
-
-
 	/**
 	 * TODO
 	 */
