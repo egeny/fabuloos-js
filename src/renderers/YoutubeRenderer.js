@@ -1,400 +1,372 @@
 /*global Renderer, FlashRenderer, YT */
 
 /**
- * YoutubeRenderer
+ * The YoutubeRenderer class
  * @constructor
  *
- * @param {object} config The renderer config
- *
- * @returns {YoutubeRenderer} A new YoutubeRenderer instance
+ * @see #Renderer.init() for signatures
  */
-function YoutubeRenderer( config ) {
-	var
-		instance = this,
-		script, firstScript; // iframe mode only
+function YoutubeRenderer(config) {
+	var script, first;
 
-	instance.config = Renderer.merge( config, YoutubeRenderer.config ); // Merge the config with defaults
-	instance        = (YoutubeRenderer.mode === "flash" ? FlashRenderer : Renderer).init( instance );
+	// Do the basic renderers' needed stuff
+	this.init(config);
 
-	// Append the "playerapiid" to the SWF URL to correctly dispatch events (flash API)
-	instance.config.data += "&playerapiid=" + instance.config.id;
-
-	// On iframe mode, prepend the iframe's API script to the list of script tags
-	if (YoutubeRenderer.mode === "iframe") {
-		script     = document.createElement( "script" );
+	// On iframe mode, load the iframe's API script
+	if (YoutubeRenderer.mode === "iframe" && !window.YT) {
+		script     = document.createElement("script");
 		script.src = "//www.youtube.com/iframe_api";
-		// Handle the script error
+
+		// Handle a loading error
 		script.onerror = function() {
 			YoutubeRenderer.script = false;
 		};
 
-		firstScript = document.getElementsByTagName( "script" )[0];
-		firstScript.parentNode.insertBefore( script, firstScript );
+		first = document.getElementsByTagName("script")[0];
+		first.parentNode.insertBefore(script, first);
 	}
-
-	// Prepare a closure for the timeupdate event
-	// (will be called by window using a setInterval, so correct the "this")
-	instance.timeupdate = function() {
-		// Dispatch a "timeupdate" event
-		instance.dispatch( "timeupdate" );
-	};
-
-	return instance;
-} // end of YoutubeRenderer constructor
+} // end of YoutubeRenderer()
 
 
 /**
  * Detect the API mode (iframe or flash)
  * It have to be done right after the constructor since even the inheritance depend on this
- * @static
  * @type {string}
  */
 YoutubeRenderer.mode = !!window.postMessage ? "iframe" : (FlashRenderer.isSupported ? "flash" : "");
-
-
-// Set the constructor name if it doesn't exists (IE)
-// Beware to only set it if undefined, this property is read-only in strict mode
-if (!YoutubeRenderer.name) {
-	YoutubeRenderer.name = "YoutubeRenderer";
-}
-
-// Inherit from FlashRenderer or Renderer depending on the API mode
-YoutubeRenderer.prototype = YoutubeRenderer.mode === "flash" ? new FlashRenderer() : new Renderer();
-YoutubeRenderer.prototype.constructor = YoutubeRenderer; // Don't forget to correct the constructor
-
+YoutubeRenderer.mode = "flash";
 
 /**
- * Default plugin configuration
- * @static
- * @type {object}
+ * The URL of the SWF file (Chromeless player)
+ * @type {string}
  */
-YoutubeRenderer.config = {
-	data: "http://www.youtube.com/apiplayer?enablejsapi=1&version=3"
-};
+YoutubeRenderer.swf = "http://www.youtube.com/v/{id}?version=3";
 
+// YoutubeRenderer can inherit and will inherit from Renderer
+YoutubeRenderer.inherit = Renderer.inherit;
+YoutubeRenderer.inherit(Renderer);
 
-/**
- * The delay between each timeupdate event
- * @static
- * @type {Number}
- */
-YoutubeRenderer.timeupdateDelay = 250;
+// YoutubeRenderer can extend and will extend itself (statically)
+YoutubeRenderer.extend = Renderer.extend;
+YoutubeRenderer.extend(YoutubeRenderer, {
+	/**
+	 * Check if a given URL is readable by this renderer
+	 * @see #Renderer.canPlay()
+	 */
+	canPlay: function canPlay(url, type) {
+		if (type) {
+			return this.canPlayType(type);
+		} else {
+			return YoutubeRenderer.rYoutube.test(url) ? "probably" : "";
+		}
+	}, // end of canPlay()
 
-
-/**
- * Regular expression to test a youtube URL and/or retrieve the video ID
- * @static
- * @type {RegExp}
- */
-YoutubeRenderer.RegExp = /youtu\.?be(?:\.com)?[\/|:](?:.+)?([\w\d]{11})/;
-
-
-/**
- * Check if a given URL is readable by this renderer
- * @static @function
- *
- * @param {string} url The url to check
- *
- * @returns {string} Returns "probably" if the URL seems to be a Youtube valid URL, otherwise return an empty string
- */
-YoutubeRenderer.canPlay = function( url ) {
-	return YoutubeRenderer.RegExp.test( url ) ? "probably" : "";
-};
-
-
-/**
- * The YoutubeRenderer can only play Youtube's video so this method will always return an empty string
- * @static @function
- *
- * @returns {string} Always return an empty string
- */
-YoutubeRenderer.canPlayType = function() {
-	return "";
-};
-
-
-/**
- * A cache for the internal handlers
- * @see #onYouTubePlayerReady
- * @static
- * @type {object}
- */
-YoutubeRenderer.handlers = { length: 0 };
-
-
-/**
- * Will this renderer be supported on this browser?
- * @static
- * @type {boolean}
- */
-YoutubeRenderer.isSupported = !!YoutubeRenderer.mode;
-
-// If supported, append this renderer to the supported renderers stack
-if (YoutubeRenderer.isSupported) {
-	Renderer.supported.push( YoutubeRenderer );
-}
-
-
-// Extend the YoutubeRenderer prototype
-Renderer.extend(YoutubeRenderer.prototype, {
 
 	/**
-	 * Get a property's value
-	 * @function
-	 *
-	 * @param {string} property The property name
-	 *
-	 * @returns The property's value or undefined if the property or element doesn't exists
+	 * Check if a given MIME type is readable by this renderer
+	 * @see #Renderer.canPlayType()
 	 */
-	get: function( property ) {
-		// Don't bother if this renderer isn't ready (has element and element ready)
-		if (!this.isReady) {
-			return;
-		}
+	canPlayType: function canPlayType(type) {
+		return type === "video/youtube" ? "probably" : "";
+	}, // end of YoutubeRenderer.canPlayType()
 
-		// TODO: width/height
 
-		// Some properties have to be handled in a specific way
+	/**
+	 * Will this renderer be supported on this browser?
+	 * @type {boolean}
+	 */
+	isSupported: !!YoutubeRenderer.mode,
+
+
+	/*!
+	 * A RegExp used to test a youtube URL and/or retrieve the video ID
+	 * @type {RegExp}
+	 */
+	rYoutube: /.*youtu\.?be(?:\.com)?[\/|:](?:.+)?([\w\d\-]{11})/,
+
+
+	/**
+	 * The delay between each timeupdate event
+	 * @type {Number}
+	 */
+	timeupdateDelay: 250
+}); // end of YoutubeRenderer.extend(YoutubeRenderer)
+
+
+// Extend the YoutubeRenderer's prototype
+YoutubeRenderer.extend({
+	/**
+	 * Get a property's value
+	 * @see #Renderer.get()
+	 */
+	get: function get(property) {
+		// Don't bother if the renderer isn't ready
+		if (!this.isReady) { return; }
+
+		// TODO: implement the other getters
 		switch (property) {
+			case "autoplay":
+			case "buffered":
+			case "controls":
+			case "currentSrc":
+			break;
+
 			case "currentTime":
 				return this.api.getCurrentTime();
+
+			case "defaultPlaybackRate":
+			break;
 
 			case "duration":
 				return this.api.getDuration();
 
+			case "ended":
+			case "error":
+			case "loop":
+			break;
+
 			case "muted":
 				return this.api.isMuted();
+
+			case "networkState":
+			case "loop":
+			break;
 
 			case "paused":
 				return this.api.getPlayerState() === 2;
 
+			case "preload":
+			case "playbackRate":
+			case "played":
+			case "poster":
+			case "readyState":
+			case "seekable":
+			case "seeking":
+			case "src":
+			case "videoHeight":
+			case "videoWidth":
+			break;
+
 			case "volume":
 				return this.api.getVolume() / 100;
-
-			default:
-				return this.cache.properties[property];
-		}
+		} // end of switch (property)
 	}, // end of get()
 
 
 	/**
 	 * Handle the Youtube's StateChange event
 	 *
-	 * @param {Number} state The new state code
+	 * @param {number} state The new state.
+	 * @return {undefined} Return nothing.
 	 */
-	handleStateChange: function( state ) {
+	handleStateChange: function handleStateChange(state) {
+		// TODO: implement the required events
 		switch (state) {
 			case -1: // Unstarted
-				// Set a flag to handle some initialization stuff
-				this.unstarted = true;
+				this.dispatch("durationchange");
 			break;
 
 			case 0: // Ended
-				// Dispatch an "ended" event
-				this.dispatch( "ended" );
+				this.trigger("ended");
 			break;
 
 			case 1: // Playing
-				// Escaping from the unstarted state
-				if (this.unstarted) {
-					// Dispatch a "loadeddata" event
-					this.dispatch( "loadeddata" );
+				this.trigger("playing");
 
-					// Dispatch a "durationchange" event
-					this.dispatch( "durationchange" );
-
-					// Clean the instance of this flag
-					delete this.unstarted;
-
-					// Prevent automatic autoplay
-					if (!this.get( "autoplay" )) {
-						// Pause and exit since we aren't playing anymore
-						return this.pause();
-					}
-				}
-
-				// Dispatch a "playing" event
-				this.dispatch( "playing" );
-
-				// Set a timer to dispatch the "timeupdate" event
-				this.timer = window.setInterval( this.timeupdate, YoutubeRenderer.timeupdateDelay );
+				// Manually set a timer to dispatch a "timeupdate" event
+				this.timer = window.setInterval(this.closure("trigger", "timeupdate"), YoutubeRenderer.timeupdateDelay);
 			break;
 
 			case 2: // Paused
-				// Dispatch a "paused" event
-				this.dispatch( "pause" );
+				this.trigger("pause");
 
-				// Clear the "timeupdate" interval
-				window.clearInterval( this.timer );
+				// Clear the timer
+				window.clearInterval(this.timer);
 			break;
 
 			case 3: // Buffering
+				// Clear the timer
+				window.clearInterval(this.timer);
 			break;
-		}
+		} // end of switch (state)
 	}, // end of handleStateChange()
 
 
-	/**
-	 * TODO
-	 */
-	pause: function() {
-		this.api.pauseVideo();
-	}, // end of pause()
-
-	/**
-	 * TODO
-	 */
-	play: function() {
-		this.api.playVideo();
-	}, // end of play()
+	// API shorthands
+	pause: Renderer.shorthand("pauseVideo"),
+	play:  Renderer.shorthand("playVideo"),
 
 
 	/**
-	 * Set a property's value.
-	 * @function
-	 *
-	 * @param {string} property The property name
-	 * @param {*} value The new property's value
+	 * Replace an element with the renderer's markup
+	 * @see #FlashRenderer.replace()
 	 */
-	set: function( property, value ) {
-		// First, check if the renderer is ready
-		if (!this.isReady) {
-			// It doesn't seems, store this value in the cache
-			this.cache.properties[property] = value;
-			return; // Stop here
+	replace: function replace(element) {
+		var
+			// Try to extract the videoId from the source
+			id = this.config.src.replace(YoutubeRenderer.rYoutube, "$1"),
+
+			// @see https://developers.google.com/youtube/player_parameters#Parameters
+			parameters = {
+				autoplay: this.config.autoplay ? 1 : 0, // Boolean doesn't seems to work
+				controls: this.config.controls ? 1 : 0,
+				disablekb: 1, // Prefer allowing the developper to use their owns
+				enablejsapi: 1, // Always enable the JS API
+				iv_load_policy: 3, // Disable annotations
+				loop: this.config.loop ? 1 : 0,
+				rel: 0, // Do not show related videos
+				showinfo: 0 // Do not show video's title
+			},
+
+			parameter; // Loop specific
+
+		// Use FlashRenderer's replace method when mode is flash
+		if (YoutubeRenderer.mode === "flash") {
+			var
+				old = YoutubeRenderer.swf, // Remember the base SWF URL, we have to change it and revert it back
+				swf = YoutubeRenderer.swf; // We have to change the SWF's URL to add some parameters
+
+			// Prepare the SWF URL
+			swf  = swf.replace('{id}', id); // Replace a token for the videoId ({id}) with the actual id
+			swf += "&playerapiid=" + this.config.id; // Append the "playerapiid" to the SWF's URL to correctly dispatch events
+
+			// Add the rest of the parameters
+			for (parameter in parameters) {
+				swf += "&" + parameter + "=" + parameters[parameter];
+			}
+
+			// FlashRenderer.replace use this.swf as source for the <object>, change it now and restore later
+			YoutubeRenderer.swf = swf;
+
+			// Replace the element
+			FlashRenderer.replace.call(this, element);
+
+			// Restore the base SWF URL
+			YoutubeRenderer.swf = old;
+
+			return this; // Chaining
 		}
 
-		// Some properties have to be handled in a specific way
+		// If the Youtube's script isn't ready, recall this method in 10ms
+		if (!YoutubeRenderer.script) {
+			// Recall only if the "script" property doesn't exists ("script" may be false if the loading fail)
+			if (YoutubeRenderer.script === undefined) {
+				window.setTimeout(this.closure("replace", element), 10);
+			}
+
+			return this; // Chaining
+		}
+
+		// Create the player
+		this.api = new YT.Player(element, {
+			width:      this.config.width,
+			height:     this.config.height,
+			videoId:    id,
+			playerVars: parameters,
+			events: {
+				onReady:       this.closure("ready", null), // onReady will pass an event, prevent ready() to think it is a callback
+				onStateChange: this.closure("handleStateChange")
+			}
+		}); // end of YT.Player()
+
+
+		// It seems to be the only way to keep a reference to the element
+		this.element = this.api.a;
+
+		return this; // Chaining
+	}, // end of replace()
+
+
+	/**
+	 * Set a property's value
+	 * @see #Renderer.set()
+	 */
+	set: function set(property, value) {
+		// Don't bother if the renderer isn't ready
+		if (!this.isReady) { return; }
+
+		// TODO: implement all setters
 		switch (property) {
+			case "autoplay":
+			case "controls":
+			break;
+
 			case "currentTime":
-				this.api.seekTo( value );
+				this.api.seekTo(value);
+			break;
+
+			case "defaultPlaybackRate":
+			break;
+
+			case "loop":
+				this.api.setLoop(value);
 			break;
 
 			case "muted":
 				this.api[value ? "mute" : "unMute"]();
+				this.trigger("volumechange");
+			break;
 
-				// Dispatch a "volumechange" event
-				this.dispatch( "volumechange" );
+			case "playbackRate":
+			case "poster":
+			case "preload":
 			break;
 
 			case "src":
-				// Get the video ID
-				var id = value.match( YoutubeRenderer.RegExp );
-
-				// Store the source value in the cache
-				this.cache.properties[property] = id ? value : "";
-
-				// Set the source using the video ID (if found)
-				if (id) {
-					this.api.loadVideoById( id[1] );
-				}
+				this.api.loadVideoById(value.replace(YoutubeRenderer.rYoutube, '$1'));
 			break;
 
 			case "volume":
-				// Youtube's volume values are between 0 and 100
-				this.api.setVolume( value * 100 );
-
-				// Dispatch a "volumechange" event
-				this.dispatch( "volumechange" );
+				this.api.setVolume(value * 100);
+				this.trigger("volumechange");
 			break;
+		} // end of switch (property)
 
-			default:
-				// By default, store the property's value in the cache
-				this.cache.properties[property] = value;
-		}
+		// Return the new value
+		return this.get(property);
 	} // end of set()
+}); // end of YoutubeRenderer.extend()
 
-}); // end of Renderer.extend()
 
-
-// Override the "replace" method on iframe mode
+// We have some special things to do for iframe mode
 if (YoutubeRenderer.mode === "iframe") {
-	/**
-	 * Replace an element with the Youtube's iframe
-	 * @function
-	 *
-	 * @param {string|Element} The element or element ID to replace
-	 */
-	YoutubeRenderer.prototype.replace = function( element ) {
-		var
-			// Store a reference to the current instance (used by some closures)
-			instance = this,
-
-			// Create a closure to recall this method (see below)
-			self = function() {
-				instance.replace( element );
-			};
-
-		// If the Youtube's script isn't ready, recall this method in 10ms
-		if (!YoutubeRenderer.script) {
-			// Recall only if the "script" property doesn't exists (prevent script error)
-			return YoutubeRenderer.script === undefined ? window.setTimeout( self, 10 ) : undefined;
-		}
-
-		// Create a Youtube's iframe
-		this.api = new YT.Player(element, {
-			// @see https://developers.google.com/youtube/player_parameters#Parameters
-			playerVars: {
-				autoplay: 0,
-				controls: 0,
-				disablekb: 1,
-				iv_load_policy: 3,
-				showinfo: 0,
-				rel: 0
-			},
-			events: {
-				onReady: function() {
-					instance.ready();
-				},
-				onStateChange: function( state ) {
-					instance.handleStateChange( state.data );
-				}
-			}
-		}); // end of new YT.Player
-	}; // end of replace()
+	// Remember when the API is ready
+	window.onYouTubeIframeAPIReady = function() {
+		YoutubeRenderer.script = true;
+	};
 }
 
 
-// Listen for the Youtube's flash API to be ready
-window.onYouTubePlayerReady = function( id ) {
-	var
+// We have some special things to do for flash mode
+if (YoutubeRenderer.mode === "flash") {
+	// Listen for the Youtube's flash API to be ready
+	window.onYouTubePlayerReady = function(id) {
 		// Retrieve the instance
-		instance = YoutubeRenderer.instances[id],
+		var instance = YoutubeRenderer.instances[id];
 
-		// Create an identifier for the internal handler
-		handler = "handler_" + (YoutubeRenderer.handlers.length + 1);
+		// Abort if we couldn't find the instance
+		if (!instance) { return; }
 
-	// Abort if we couldn't find the instance
-	if (!instance) { return; }
+		/*!
+		 * Since Youtube's addEventListener method call on window.something
+		 * We have to retrieve the right YoutubeRenderer instance.
+		 * Using YoutubeRenderer.instances["id"] doesn't work
+		 * (the Youtube player cannot call on an array).
+		 * We have to create something like YoutubeRenderer.handlers("id")
+		 * To retrieve the right instance, then call the corresponding method 
+		 */
+		YoutubeRenderer.handlers = YoutubeRenderer.handlers || {};
+		YoutubeRenderer.handlers[instance.config.id] = instance.closure("handleStateChange");
 
-	/*!
-	 * Since Youtube's addEventListener method call on window.something
-	 * We have to retrieve the right YoutubeFlashRenderer instance.
-	 * Using YoutubeFlashRenderer.instances["id"] doesn't work
-	 * (the Youtube player cannot call on an array)
-	 * We have to create a closure calling the right instance.
-	 * This closure will be store in a fake array and will be called
-	 * Using YoutubeFlashRenderer.handlers.handler_X (where X is unique).
-	 */
-	YoutubeRenderer.handlers.length++;
-	YoutubeRenderer.handlers[handler] = function() {
-		instance.handleStateChange.apply( instance, arguments );
-	};
+		// Register the event on the player
+		// We have to listen only for onStateChange so the structure of handlers is simple
+		instance.api.addEventListener("onStateChange", "Renderer.YoutubeRenderer.handlers." + instance.config.id);
 
-	// Register the event on the player
-	instance.element.addEventListener( "onStateChange", "YoutubeRenderer.handlers." + handler );
+		// The renderer is now ready
+		instance.ready();
+	}; // end of onYouTubePlayerReady()
+}
 
-	// Create a shorthand for the API
-	instance.api = instance.element;
 
-	// Call the regular's Renderer ready method
-	instance.ready();
-}; // end of onYouTubePlayerReady()
-
-// Listen for the Youtube's iframe script to be ready
-window.onYouTubeIframeAPIReady = function() {
-	YoutubeRenderer.script = true;
-};
-
-// Expose
-window.YoutubeRenderer = YoutubeRenderer;
+// Register this renderer
+Renderer.register(YoutubeRenderer);
