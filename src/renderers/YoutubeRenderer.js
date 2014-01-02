@@ -34,7 +34,6 @@ function YoutubeRenderer(config) {
  * @type {string}
  */
 YoutubeRenderer.mode = !!window.postMessage ? "iframe" : (FlashRenderer.isSupported ? "flash" : "");
-YoutubeRenderer.mode = "flash";
 
 /**
  * The URL of the SWF file (Chromeless player)
