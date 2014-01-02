@@ -497,9 +497,6 @@ Renderer.extend({
 		// We don't need the callbacks stack anymore
 		delete this.callbacks;
 
-		// We don't need the config anymore
-		delete this.config;
-
 		// This renderer is now ready
 		this.isReady = true;
 	}, // end of ready()
