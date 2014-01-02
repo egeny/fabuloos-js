@@ -129,6 +129,28 @@ function createFacade(fn, _super) {
 } // end of createFacade()
 
 
+/*!
+ * Measure the width or height of an element
+ *
+ * @param {element} element The element to measure.
+ * @param {string} property The property to measure.
+ * @return {number|null} Return the measured size or null if there is no element.
+ */
+function measure(element, property) {
+	// If there is no element, return null (0 is still a size)
+	if (!element) { return null; }
+
+	var value = window.getComputedStyle ?
+	// Pass a second argument (null) to getComputedStyle for compatibility reasons
+	// @see https://developer.mozilla.org/en-US/docs/DOM/window.getComputedStyle
+	window.getComputedStyle(element, null).getPropertyValue(property) :
+	// Use the scrollWidth/scrollHeight property since it is calculated in a different way in IE
+	element["scroll" + property.charAt(0).toUpperCase() + property.slice(1)];
+
+	return parseInt(value, 10) || 0;
+} // end of measure
+
+
 /**
  * Extend some objects or the fabuloos' prototype
  * It will simulate inheritance by giving access to this._super.
@@ -531,6 +553,20 @@ fab.extend({
 
 
 	/**
+	 * Get or set the height of the player
+	 *
+	 * @param {number} value The new height to apply.
+	 * @return {fabuloos} Return the current instance to allow chaining.
+	 *
+	 * @param {undefined}
+	 * @return {number} Return the height of the player.
+	 */
+	height: function height(value) {
+		return this.size("height", value);
+	}, // end of height()
+
+
+	/**
 	 * Load the current source
 	 *
 	 * @param {undefined}
@@ -919,6 +955,63 @@ fab.extend({
 
 
 	/**
+	 * Measure or set the size of the player
+	 *
+	 * @param {string} property The property to get (`width` or `height`).
+	 * @return {number} Return the width or the height of the player.
+	 *
+	 * @param {string} property The property to set (`width` or `height`).
+	 * @param {number} value The value to apply for the property.
+	 * @return {fabuloos} Return the current instance to allow chaining.
+	 *
+	 * @param {object} properties The properties to set (`width` and/or `height`).
+	 * @return {fabuloos} Return the current instance to allow chaining.
+	 *
+	 * @param {undefined}
+	 * @return {object} Return the width and height of the player.
+	 */
+	size: function size(property, value) {
+		// get = computed
+		// set = this._element.width
+
+		// Support receiving object literals
+		if (arguments[0] && arguments[0].constructor === Object) {
+			// Loop through the received properties
+			for (var prop in arguments[0]) {
+				// Call itself
+				this.size(prop, arguments[0][prop]);
+			}
+
+			return this; // Chaining
+		}
+
+		// No arguments means get the width and height
+		if (!arguments.length) {
+			return {
+				width:  measure(this._element, "width"),
+				height: measure(this._element, "height")
+			};
+		}
+
+		// Support only "width" and "height"
+		if (property === "width" || property === "height") {
+			// If there is no value, act as a getter
+			if (value === undefined) {
+				// Return the desire size
+				return measure(this._element, property);
+			} else {
+				// Otherwise, act as a setter and set the size if there is an element
+				if (this._element) {
+					this._element[property] = parseInt(value, 10) || 0;
+				}
+			}
+		}
+
+		return this; // Chaining
+	}, // end of size()
+
+
+	/**
 	 * Analyze the sources against the renderers
 	 * This method will NOT change the current source, it will only analyze them.
 	 *
@@ -1107,7 +1200,21 @@ fab.extend({
 		fab.event.trigger(this, type);
 
 		return this; // Chaining
-	} // end of trigger()
+	}, // end of trigger()
+
+
+	/**
+	 * Get or set the width or the player
+	 *
+	 * @param {number} value The new width to apply.
+	 * @return {fabuloos} Return the current instance to allow chaining.
+	 *
+	 * @param {undefined}
+	 * @return {number} Return the width of the player.
+	 */
+	width: function width(value) {
+		return this.size("width", value);
+	} // end of width()
 }); // end of fab.extend()
 
 
