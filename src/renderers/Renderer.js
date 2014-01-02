@@ -295,7 +295,13 @@ Renderer.extend(Renderer, {
 	 */
 	register: function register(renderer) {
 		if (renderer.isSupported) {
+			// Add this renderer to the stack of supported renderers
 			this.supported.push(renderer);
+
+			// Keep a static reference to the renderer's class
+			// This allow calling LambdaRenderer using Renderer.LambdaRenderer
+			// Only Renderer need to be exposed
+			Renderer[renderer.name] = renderer;
 		}
 	}, // end of Renderer.register()
 
