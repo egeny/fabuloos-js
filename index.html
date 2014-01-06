@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8" />
+	<title>fabuloos sandbox</title>
+
+	<!-- This file is used to test the player -->
+
+	<!-- Fabuloos (core) -->
+	<script src="src/core.js"></script>
+	<script src="src/event.js"></script>
+	<!--<script src="src/api.js"></script>-->
+
+	<!-- Fabuloos (renderers) -->
+	<script src="src/renderers/Renderer.js"></script>
+	<script src="src/renderers/FlashRenderer.js"></script>
+	<script src="src/renderers/HTMLRenderer.js"></script>
+	<script src="src/renderers/FabuloosFlashRenderer.js"></script>
+	<!--<script src="src/renderers/YoutubeRenderer.js"></script>-->
+	<!--<script src="src/renderers/DailymotionRenderer.js"></script>-->
+
+	<!-- Fabuloos (plugins) -->
+	<script src="src/plugins/tracks.js"></script>
+	<!--<script src="src/plugins/playlist.js"></script>-->
+</head>
+
+<body>
+	<video id="media" width="720" height="405" controls>
+		<source type="video/mp4" src="http://res/demoreel-2013.mp4" />
+		<source type="video/youtube" src="http://www.youtube.com/watch?v=UK-lGSYKaaM" />
+	</video>
+
+	<script>
+		FabuloosFlashRenderer.swf = "build/FabuloosFlashRenderer.swf";
+		var player = fab("media");
+
+		// Dump all properties
+		function dump() {
+			var
+				object = {},
+				property,
+				properties = "error networkState readyState width height videoWidth videoHeight src currentSrc preload buffered currentTime duration defaultPlaybackRate playbackRate seeking seekable paused played ended poster autoplay controls loop volume muted".split(" ");
+
+			while ((property = properties.shift())) {
+				object[property] = player.get(property);
+			}
+
+			return object;
+		}
+	</script>
+</body>
+</html>
