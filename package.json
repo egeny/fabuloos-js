@@ -1,0 +1,43 @@
+{
+	"name": "fabuloos-js",
+	"description": "Unique, intuitive and powerful framework for faster and easier media playback",
+	"version": "1.0.0-beta",
+	"author": "eGeny <team@egeny.net>",
+	"contributors": [
+		{
+			"name": "Nicolas Le Gall",
+			"email": "nico@egeny.net"
+		}
+	],
+	"homepage": "http://fabuloos.org",
+	"bugs": "https://github.com/egeny/fabuloos-js/issues",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/egeny/fabuloos-js.git"
+	},
+	"keywords": [
+		"html5",
+		"player",
+		"video",
+		"audio",
+		"youtube"
+	],
+	"analyze": false,
+	"main": "build/fabuloos-1.0.0-beta.min.js",
+	"dependencies": {},
+	"devDependencies": {
+		"gulp":           "*",
+		"gulp-concat":    "*",
+		"gulp-footer":    "*",
+		"gulp-header":    "*",
+		"gulp-jshint":    "*",
+		"gulp-rename":    "*",
+		"gulp-uglify":    "*",
+		"jshint-stylish": "*"
+	},
+	"licenses": [{
+		"type": "Apache-2.0",
+		"url": "http://fabuloos.org/license"
+	}],
+	"engines": {}
+}
