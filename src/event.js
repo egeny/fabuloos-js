@@ -152,46 +152,46 @@ fab.event = {
 
 
 	/**
-	 * Add an handler for the given event types on the given element
-	 *
-	 * @param {element|object} element The element on which to listen event (can be an element or an object).
-	 * @param {string} types The event types (can be multiple, separated by a space) to listen.
-	 * @param {function} handler The function to launch when the event types are trigerred.
-	 * @return {undefined} Return nothing.
+	 * Prepare the basic interface for event listening
+	 * Simply add these methods to a prototype to have an object with event capabilities
+	 * @type {object}
 	 */
-	on: function on(element, types, handler) {
-		var
-			cache = fab.event.cache(element),
-			type; // Loop specific
+	api: {
+		/**
+		 * Remove an handler for the given types on the given element
+		 *
+		 * @see #off() for signatures.
+		 * @return {*} Return the current instance to allow chaining.
+		 */
+		off: function off(types, handlers) {
+			fab.event.off(this, types, handlers);
+			return this;
+		},
 
-		// Allow multiple events types separated by a space
-		types = types ? types.replace(rTrim, "").split(rSplit) : []; // Trim first to avoid bad splitting
 
-		// Loop through each event types
-		while ((type = types.shift())) {
-			// Is there handlers for this type?
-			if (!cache.handlers[type]) {
-				// No, initialize
-				cache.handlers[type] = [];
+		/**
+		 * Add an handler for the given event types on the given element
+		 *
+		 * @see #on() for signatures.
+		 * @return {*} Return the current instance to allow chaining.
+		 */
+		on: function on(types, handlers) {
+			fab.event.on(this, types, handlers);
+			return this;
+		},
 
-				/*!
-				 * We add only one listener for each types. We also have to use a closure (@see getCache)
-				 * to correct the "this" keywork for IE. The private handle method will launch each listener
-				 */
 
-				// if DOM level 2 is supported, then use it
-				if (element.addEventListener) {
-					element.addEventListener(type, cache.manager, false);
-				} else if (element.attachEvent) {
-					// Microsoft's old events implementation
-					element.attachEvent("on" + type, cache.manager);
-				}
-			}
-
-			// Cache the handler for this type
-			cache.handlers[type].push(handler);
-		} // end of while
-	}, // end of on()
+		/**
+		 * Trigger an event type on the given element
+		 *
+		 * @see #trigger() for signatures.
+		 * @return {*} Return the current instance to allow chaining.
+		 */
+		trigger: function trigger(type) {
+			fab.event.trigger(this, type);
+			return this;
+		}
+	}, // end of fab.event.interface
 
 
 	/**
@@ -255,6 +255,49 @@ fab.event = {
 			} // end of if (!handlers.length)
 		} // end of while
 	}, // end of off()
+
+
+	/**
+	 * Add an handler for the given event types on the given element
+	 *
+	 * @param {element|object} element The element on which to listen event (can be an element or an object).
+	 * @param {string} types The event types (can be multiple, separated by a space) to listen.
+	 * @param {function} handler The function to launch when the event types are trigerred.
+	 * @return {undefined} Return nothing.
+	 */
+	on: function on(element, types, handler) {
+		var
+			cache = fab.event.cache(element),
+			type; // Loop specific
+
+		// Allow multiple events types separated by a space
+		types = types ? types.replace(rTrim, "").split(rSplit) : []; // Trim first to avoid bad splitting
+
+		// Loop through each event types
+		while ((type = types.shift())) {
+			// Is there handlers for this type?
+			if (!cache.handlers[type]) {
+				// No, initialize
+				cache.handlers[type] = [];
+
+				/*!
+				 * We add only one listener for each types. We also have to use a closure (@see getCache)
+				 * to correct the "this" keywork for IE. The private handle method will launch each listener
+				 */
+
+				// if DOM level 2 is supported, then use it
+				if (element.addEventListener) {
+					element.addEventListener(type, cache.manager, false);
+				} else if (element.attachEvent) {
+					// Microsoft's old events implementation
+					element.attachEvent("on" + type, cache.manager);
+				}
+			}
+
+			// Cache the handler for this type
+			cache.handlers[type].push(handler);
+		} // end of while
+	}, // end of on()
 
 
 	/**
