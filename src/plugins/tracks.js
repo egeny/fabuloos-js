@@ -1,198 +1,171 @@
 /**
- * The base Item class
- * @constructor
- *
- * @returns {Item} A new Item instance
- */
-function Item() {} // end of Item constructor
-
-
-/**
  * The base List class
- * @constructor
- *
- * @returns {List} A new List instance
+ * @abstract @constructor
  */
-function List() {} // end of List constructor
+function List() {}
 
 
-/**
- * Create a filter closure
- * @static @function
- *
- * @params filter The filter to pass to the filter function
- *
- * @returns {function} Return a closure used to filter
- */
-List.createFilter = function( filter ) {
-	return function() {
-		var args = Array.prototype.slice.call( arguments ); // Convert the arguments to Array
-		args.unshift( filter ); // Prepend the original filter
+// List can extend and will extend itself (statically)
+List.extend = fab.extend;
+List.extend(List, {
+	/**
+	 * Create a closure filtering the list with the given filter
+	 *
+	 * @param {object} filter The filter to pass to #get().
+	 * @return {function} Return a closure calling #get() passing the filter.
+	 */
+	filter: function filter(_filter) {
+		return function filter() {
+			return this.get(_filter);
+		};
+	}, // end of filter()
 
-		return this.get.apply( this, args ); // Filter!
-	};
-}; // end of createFilter()
-
-
-/**
- * Create the filters methods in the prototype
- * @static @function
- *
- * @params filters The methods and filters to create
- */
-List.createFilters = function( filters ) {
-	for (var method in filters) {
-		this.prototype[method] = List.createFilter( filters[method] );
-	}
-}; // end of createFilters()
-
-
-/**
- * Create a shorthand closure
- * @static @function
- *
- * @params method The shorthand method to create
- *
- * @returns {function} Retunr a closure used to launch the shorthan method on the tracks
- */
-List.createShorthand = function( method ) {
-	return function() {
-		var
-			// Retrieve the tracks (or unique track)
-			tracks = this.get.apply( this, arguments ),
-			i = 0, count; // Loop specific
-
-		// Do we have to iterate through a TrackList?
-		if (tracks.length) {
-			// Loop through each tracks
-			for (count = tracks.length(); i < count; i++) {
-				// Get the single track and launch the method on it
-				tracks.get( i )[method]();
-			}
-		} else {
-			// Single track, just launch the method on it
-			tracks[method]();
-		}
-	};
-}; // end of createShorthand()
-
-
-/**
- * Create the shorthands methods in the prototype
- * @static @function
- *
- * @params shorthands The methods to create
- */
-List.createShorthands = function( shorthands ) {
-	for (var method in shorthands) {
-		this.prototype[shorthands[method]] = List.createShorthand( shorthands[method] );
-	}
-}; // end of createShorthands()
-
-
-/**
- * List initialization
- * @function
- *
- * @returns {object} The initialized instance
- */
-List.prototype.init = function() {
-	var list = []; // The internal list
 
 	/**
-	 * Add an item to the list
-	 * @function
+	 * Create some filters methods in the prototype
 	 *
-	 * @params {Item} The item to add. You can add multiple items at once by providing multiple arguments.
-	 *
-	 * @example
-	 *   <code>
-	 *     list.add( new Item ) // Add a new item
-	 *     list.add( new Item, new Item, new Item ) // Add three new items
-	 *   </code>
+	 * @param {object} filters The filters to create.
+	 * @return {undefined} Return nothing.
 	 */
-	this.add = function() {
-		// Loop through arguments to add Item to the internal list
-		for (var i = 0, count = arguments.length; i < count; i++) {
-			// Allow only Item instances
-			if (arguments[i] instanceof this.constructor.item) {
-				list.push( arguments[i] );
-			}
+	filters: function filters(_filters) {
+		for (var method in _filters) {
+			this.prototype[method] = this.filter(_filters[method]);
 		}
-	}; // end of add()
+	}, // end of filters()
+
+
+	/**
+	 * Create a closure calling the asked method on items
+	 * The number of item will depend on the argument passed to the closure
+	 * @see #get() for closure's signature
+	 *
+	 * @param {string} method The method name to launch on items.
+	 * @return {function} Return a closure calling the method on the items of the list.
+	 */
+	shorthand: function shorthand(method) {
+		return function shorthand(filter) {
+			// Don't bother if we're trying to call an unknown method on the items
+			if (!this.constructor.item.prototype[method]) { return; }
+
+			var
+				items = this.get(filter), // Get the items (may be all, none or just one)
+				item, i = 0; // Loop specific
+
+			// Do we have a list to iterate?
+			if (items.length) {
+				// Loop through
+				while ((item = items.get(i++))) {
+					item[method]();
+				}
+			} else if (item !== undefined) {
+				// We found just one item so launch the method on it
+				item[method]();
+			}
+		};
+	}, // end of shorthand()
+
+
+	/**
+	 * Create some shorthands methods in the prototype
+	 *
+	 * @param {array} methods The methods to create.
+	 * @return {undefined} Return nothing.
+	 */
+	shorthands: function shorthands(methods) {
+		var method, i = 0; // Loop specific
+
+		// Loop through received methods
+		while ((method = methods[i++])) {
+			this.prototype[method] = this.shorthand(method);
+		}
+	} // end of shorthands()
+}); // end of List.extend(List)
+
+
+// Extend the List's prototype
+List.extend({
+	/**
+	 * Add an item to the list
+	 *
+	 * @param {Item} ... The item(s) to add.
+	 * @return {List} Return the current instance to allow chaining.
+	 */
+	add: function add() {
+		var
+			list = this.list = this.list || [], // Makes sure we have an internal list
+			i = 0, count = arguments.length; // Loop specific
+
+		// Loop through items
+		for (; i < count; i++) {
+			// Only allow adding supported items
+			if (arguments[i] instanceof this.constructor.item) {
+				this.list.push(arguments[i]);
+			}
+		} // end of for
+
+		return this; // Chaining
+	}, // end of add()
 
 
 	/**
 	 * Delete one or more items
-	 * @function
 	 *
-	 * @params {undefined|number|Item} item The item to delete from the list.
-	 *   Might be undefined (will reset the list), a number (will be used as index) or an item (will search for it)
+	 * @param {Item} item The item to delete.
+	 * @return {List} Return the current instance to allow chaining.
+	 *
+	 * @param {number} index The item's index to delete.
+	 * @return {List} Return the current instance to allow chaining.
+	 *
+	 * @param {undefined}
+	 * @return {List} Return the current instance to allow chaining.
 	 */
-	this.del = function( item ) {
+	del: function del(item) {
+		var
+			list = this.list = this.list || [], // Makes sure we have an internal list
+			i = list.length; // Loop specific
+
 		if (item === undefined) {
 			// No argument, we will reset all the list
-			this.length( 0 );
+			list.length = 0;
 		} else if (typeof item === "number") {
 			// The argument is a number, simply drop the index
-			list.splice( item, 1 );
-		} else if (item instanceof Item) {
+			list.splice(item, 1);
+		} else if (item instanceof this.constructor.item) {
 			// The argument is an Item instance, look for it and removes it
-			var
-				tmp = [], // The new list
-				i = 0, count = list.length; // Loop specific
-
-			for (; i < count; i++) {
-				// Keeps all items except the one we're trying to remove
-				if (list[i] !== item) {
-					tmp.push( list[i] );
+			// Loop through the list to find the ones to remove
+			while (i--) {
+				if (list[i] === item) {
+					list.splice(i, 1); // Dump the item
+					// Don't break since we may have more than one item occurence
 				}
-			}
-
-			// Override the old list with the new one
-			list = tmp;
+			} // end of while
 		}
-	}; // end of del()
+
+		return this; // Chaining
+	}, // end of del()
 
 
 	/**
 	 * Get a list of items or a single item, depending on the filter
-	 * @function
 	 *
-	 * @params {undefined|number|object} filter The filter to apply when retrieving the items
-	 *   Might be undefined (will return the whole list), a number (will be used as an index to retrieve the item),
-	 *   or an object (will parse each property to match with each items).
-	 *   Multiple arguments can be provided, the function will be called recursively.
+	 * @param {object} filter The filter to apply.
+	 * @return {List} Return the list of item found.
 	 *
-	 * @returns {List|Item|undefined} Can return a List or an unique item.
+	 * @param {number} index The item's index to look for.
+	 * @return {Item|undefined} Return the item or `undefined` if there is no item for this index.
+	 *
+	 * @param {undefined}
+	 * @return {List} Return the current list.
 	 *
 	 * @example
-	 *   <code>
-	 *     list.get() // Will return the whole list
-	 *     list.get( 0 ) // Will return the first item
-	 *     list.get({ foo: "bar" }) // Will return a list of matching items
-	 *     list.get({ foo: "bar" }, { baz: "qux" }, 0) // Will return the first item if some match
-	 *   </code>
+	 *   list.get() // Will return the whole list
+	 *   list.get(0) // Will return the first item (or undefined if the list is empty)
+	 *   list.get({ foo: "bar" }) // Will return the list of items having a property "foo" having "bar" as value
 	 */
-	this.get = function( filter ) {
+	get: function get(filter) {
 		var
-			result,
-			i = 0, count; // Loop specific
-
-		// Add some sugar, handle multiple arguments (will call recursively)
-		if (arguments.length > 1) {
-			// Start by working on the current instance
-			result = this;
-
-			// Loop through arguments, while result have items to filter on
-			for (count = arguments.length; i< count && result.length && result.length(); i++) {
-				// Filter the current item, then re-filter on the result
-				result = result.get( arguments[i] );
-			}
-
-			// Return the recusively filtered result (may be List or Item instance)
-			return result;
-		}
+			list = this.list = this.list || [], // Makes sure we have an internal list
+			i = 0, count = list.length, result, match, prop, value; // Loop specific
 
 		// No filter means act like a getter
 		if (filter === undefined) {
@@ -200,294 +173,271 @@ List.prototype.init = function() {
 		} else if (typeof filter === "number") {
 			// If the filter is a number, return the item of the list associated to the index
 			return list[filter];
-		} else if (typeof filter === "object") {
+		} else if (filter && filter.constructor === Object) {
 			// If the filter is an object, prepare to filter according to this object
-			var match, prop, value; // Loop specific
-
-			// Prepare the return value (always a List)
-			result = new this.constructor();
+			result = new this.constructor(); // Prepare the return value (always a List)
 
 			// Loop throught the items to find the one matching
-			for (i = 0, count = list.length; i < count; i++) {
+			for (; i < count; i++) {
 				match = false; // Initialize the match flash
 
+				// Loop through the filter's properties
 				for (prop in filter) {
-					// Retrieve the item's value for this property, may have to call a getter
+					// Retrieve the item's value (may have to call a function)
 					value = typeof list[i][prop] === "function" ? list[i][prop]() : list[i][prop];
-					match = filter[prop] === value; // Try to match the value and the filter's value for this property
+					match = filter[prop] === value; // Try to match the value against the filter's value
 
 					// If this property doesn't match, don't bother trying the others
-					if (!match) {
-						break;
-					}
+					if (!match) { break; }
 				} // end of for
 
 				// If we have a match, save this item reference to the result list
 				if (match) {
-					result.add( list[i] );
+					result.add(list[i]);
 				}
 			} // end of for
 
 			return result;
 		}
-	}; // end of get()
+	}, // end of get()
 
 
 	/**
 	 * Retrieve the index of an item
-	 * @function
 	 *
-	 * @params {Item} The item to look for
-	 *
-	 * @returns {undefined|number} Return undefined (if the arguments isn't an instance of Item) or the index of the item
-	 *
-	 * @throws {Exception} Throw a NOT_FOUND_ERR if the item wasn't found
+	 * @param {Item} The item to look for.
+	 * @return {number} Return the index of the item or -1 if item cannot be found.
 	 */
-	this.index = function( item ) {
-		// Makes sure we're looking for an Item
-		if (!(item instanceof this.constructor.item)) {
-			return;
-		}
+	index: function index(item) {
+		var
+			list = this.list = this.list || [], // Makes sure we have an internal list
+			i = list.length; // Loop specific
+
+		// Don't bother if the item isn't a valid item
+		if (!(item instanceof this.constructor.item)) { return -1; }
 
 		// Look for the index
 		// The "continue" is useless but needed for lint
-		for (var i = 0, count = list.length; i < count && list[i] !== item; i++) { continue; }
+		for (; i > -1 && list[i] !== item; i--) { continue; }
 
-		// Throw a NOT_FOUND_ERR exception if the index wasn't found
-		if (i === count) {
-			throw new fab.Exception( fab.Exception.NOT_FOUND_ERR );
-		}
-
-		// Return the index
 		return i;
-	}; // end of item();
+	}, // end of index()
 
 
 	/**
-	 * Get or set the number of item in the list. Act as a getter without arguments.
-	 * @function
+	 * Get or set the number of item in the list
 	 *
-	 * @params {number} [length=undefined] The number of item to keep
+	 * @param {undefined}
+	 * @return {number} Return the number of item in the list.
 	 *
-	 * @returns {number} Return the number of item in the list
+	 * @param {number} length The number of item to keep.
+	 * @return {number} Return the number of item in the list.
 	 */
-	this.length = function( length ) {
-		return typeof length === "number" ? (list.length = length) : list.length;
-	}; // end of length()
+	length: function length(_length) {
+		var list = this.list = this.list || []; // Makes sure we have an internal list
+		return typeof _length === "number" ? (list.length = _length) : list.length;
+	}, // end of length()
 
 
 	/**
 	 * Replace an item
-	 * @function
 	 *
-	 * @params {number} The index of the item to replace
-	 * @params {Item} The new item
+	 * @param {number} index The index of the item to replace.
+	 * @param {Item} item The new item.
+	 * @return {List} Return the current instance to allow chaining.
 	 */
-	this.set = function( index, item ) {
+	set: function set(index, item) {
+		var list = this.list = this.list || []; // Makes sure we have an internal list
 		if (typeof index === "number" && item instanceof this.constructor.item) {
 			list[index] = item;
 		}
-	}; // end of set()
-
-}; // end of init()
-
-// The kind of item accepted in the list
-List.item = Item;
+	} // end of set()
+}); // end of List.extend()
 
 
 /**
  * The Track class
  * @constructor
  *
- * @param {string} kind The kind of track to create
- * @param {string} [label=""] The label of the track
- * @param {string} [lang=""] The language of the track
- *
- * @returns {Track} A new Track instance
+ * @param {string} kind The kind of track to create.
+ * @param {string} label="" The label of the track.
+ * @param {string} lang="" The language of the track.
+ * @return {Track} A new Track instance.
  */
-function Track( kind, label, lang ) {
-	// A track must have a kind
+function Track(kind, label, lang) {
 	if (!kind) {
-		throw new fab.Exception( fab.Exception.SYNTAX_ERR );
+		throw "A track must have a kind";
 	}
 
-	// Makes sure we have a label and a lang
-	label = label || "";
-	lang  = lang  || "";
+	this.kind  = kind;
+	this.label = label || "";
+	this.lang  = lang  || "";
+	this.cues       = new TrackCueList();
+	this.activeCues = new TrackCueList(); // TODO: change name
+} // end of Track()
 
-	var
-		cues       = new TrackCueList(),
-		activeCues = new TrackCueList();
 
-	// TODO
-	//this.oncuechange
-
-	// Define the default mode to hidden
-	this.mode = Track.HIDDEN;
-
-	// Creating getters for readonly properties
-	this.kind       = function() { return kind; };
-	this.label      = function() { return label; };
-	this.lang       = function() { return lang; };
-	this.language   = this.lang; // lang() is more convenient but keep language() as it is standard
-	this.cues       = function() { return cues; };
-	this.activeCues = function() { return activeCues; };
-
+// Track can extend and will extend itself (statically)
+Track.extend = fab.extend;
+Track.extend(Track, {
 	/**
-	 * Add a cue to the list of cues.
-	 * Implementation of http://dev.w3.org/html5/spec/media-elements.html#dom-texttrack-addcue
-	 * @function
-	 *
-	 * @params {TrackCue} The cue to add. Might be multiple arguments.
+	 * The different modes supported
+	 * @type {number}
 	 */
-	this.addCue = function() {
-		for (var i = 0, count = arguments.length; i < count; i++) {
-			// Ignore bad arguments
-			if (!(arguments[i] instanceof Item)) { continue; }
-
-			// Try to retrieve on delete the item
-			try {
-				cues.del( cues.index( arguments[i] ) );
-			} catch (e) {}
-
-			// Define the cue's track property to this track
-			arguments[i].track = this;
-
-			// Add the cue to the cue list
-			cues.add( arguments[i] );
-		}
-	}; // end of addCue()
+	DISABLED: 0,
+	HIDDEN:   1,
+	SHOWING:  2
+}); // end of Track.extend(Track)
 
 
+// Extend Track's prototype
+Track.extend({
 	/**
-	 * Remove a cue to the list of cues.
-	 * Implementation of http://dev.w3.org/html5/spec/media-elements.html#dom-texttrack-removecue
-	 * @function
+	 * Check if the track is currently active
 	 *
-	 * @params {TrackCue} The cue to remove.
-	 *
-	 * @throws {Exception} Throw an NOT_FOUND_ERR if the cue wasn't found
+	 * @param {undefined}
+	 * @return {boolean} Return false if the track is disabled (mode to Track.DISABLED).
 	 */
-	this.removeCue = function( cue ) {
-		// Skip bad argument
-		if (!(cue instanceof Item )) { return; }
-
-		try {
-			cues.del( cues.index( cue ) );
-		} catch (e) {
-			throw e;
-		}
-	}; // end of removeCue()
-
-} // end of Track constructor
-
-Track.prototype = new Item(); // Inherit from Item
-Track.prototype.constructor = Track; // Don't forget to correct the constructor
-
-// Statically define the tracks modes
-Track.DISABLED = 0;
-Track.HIDDEN   = 1;
-Track.SHOWING  = 2;
-
-
-// Add some useful functions to the Track's prototype
-Track.prototype = {
-	/**
-	 * Tells if the track is active (not disabled)
-	 * @function
-	 *
-	 * @return {boolean} Return false if the track is disabled (mode to Track.DISABLED), otherwise return true
-	 */
-	active: function() {
+	active: function active() {
 		return this.mode !== Track.DISABLED;
 	}, // end of active()
 
 
 	/**
-	 * Disable the track (set its mode to Track.DISABLED)
-	 * @function
+	 * Add a cue to the list of cues.
+	 *
+	 * @param {TrackCue} ... The cues to add.
+	 * @return {Track} Return the current instance to allow chaining.
 	 */
-	disable: function() {
+	add: function add() {
+		var
+			cues = fab.toArray(arguments), // Copy the received cues
+			cue; // Loop specific
+
+		// Loop through received cues
+		while ((cue = cues.shift())) {
+			// Ignore bad arguments
+			if (!(cue instanceof TrackCue)) { continue; }
+
+			// If this cue is already in the list, removed it
+			this.cues.del(cue);
+
+			// This cue now belongs to this track
+			cue.track = this;
+
+			// Add the cue to the list
+			this.cues.add(cue);
+		} // end while
+
+		return this; // Chaining
+	}, // end of add()
+
+
+	/**
+	 * Delete a cue to the list of cues.
+	 *
+	 * @param {TrackCue} cue The cue to delete.
+	 * @return {Track} Return the current instance to allow chaining.
+	 */
+	del: function del(cue) {
+		this.cues.del(cue);
+		return this; // Chaining
+	}, // end of del()
+
+
+	/**
+	 * Disable the track (set its mode to Track.DISABLED)
+	 *
+	 * @param {undefined}
+	 * @return {Track} Return the current instance to allow chaining.
+	 */
+	disable: function disable() {
 		this.mode = Track.DISABLED;
+		return this; // Chaining
 	}, // end of disable()
 
 
 	/**
-	 * Tells if the track is disabled
-	 * @function
+	 * Check if the track is currently disabled
 	 *
-	 * @return {boolean} Return true if the track is disabled (mode to Track.DISABLED), otherwise return false
+	 * @param {undefined}
+	 * @return {boolean} Return true if the track is disabled (mode to Track.DISABLED).
 	 */
-	disabled: function() {
+	disabled: function disabled() {
 		return this.mode === Track.DISABLED;
-	}, // end of disable()
+	}, // end of disabled()
 
 
 	/**
 	 * Hide the track (set its mode to Track.HIDDEN)
-	 * @function
+	 *
+	 * @param {undefined}
+	 * @return {Track} Return the current instance to allow chaining.
 	 */
-	hide: function() {
+	hide: function hide() {
 		this.mode = Track.HIDDEN;
+		return this; // Chaining
 	}, // end of hide()
 
 
 	/**
-	 * Tells if the track is hidden
-	 * @function
+	 * Check if the track if currently hidden
 	 *
-	 * @return {boolean} Return true if the track is hidden (mode to Track.HIDDEN), otherwise return false
+	 * @param {undefined}
+	 * @return {boolean} Return true if the track is hidden (mode to Track.HIDDEN).
 	 */
-	hidden: function() {
+	hidden: function hidden() {
 		return this.mode === Track.HIDDEN;
-	}, // end of disable()
+	}, // end of hidden()
+
+
+	/**
+	 * The default mode for each tracks
+	 * @type {number}
+	 */
+	mode: Track.HIDDEN,
 
 
 	/**
 	 * Show the track (set its mode to Track.SHOWING)
-	 * @function
+	 *
+	 * @param {undefined}
+	 * @return {Track} Return the current instance to allow chaining.
 	 */
-	show: function() {
+	show: function show() {
 		this.mode = Track.SHOWING;
+		return this; // Chaining
 	}, // end of show()
 
 
 	/**
-	 * Tells if the track is showing
-	 * @function
+	 * Check if the track is currently showing
 	 *
-	 * @return {boolean} Return true if the track is showing (mode to Track.SHOWING), otherwise return false
+	 * @param {undefined}
+	 * @return {boolean} Return true if the track is showing (mode to Track.SHOWING).
 	 */
-	showing: function() {
+	showing: function showing() {
 		return this.mode === Track.SHOWING;
-	} // end of disable()
-}; // end of Track.prototype
+	} // end of showing()
+}); //end of Track.extend()
 
 
 /**
- * The TrackList class
+ * The Track class
  * @constructor
- *
- * @returns {TrackList} A new TrackList instance
  */
-function TrackList() {
-	this.init(); // Initialize the list
+function TrackList() {}
 
-	// TODO
-	//this.onaddtrack
-	//this.onremovetrack
-} // end of TrackList constructor
 
-TrackList.item = Track; // The kind of item accepted in the list
-TrackList.prototype = new List(); // Inherit from List
-TrackList.prototype.constructor = TrackList; // Don't forget to correct the constructor
+// The only allowed item in this list is Track
+TrackList.item = Track;
 
-// Retrieve the static references for filters and shorthands creation (more convenient)
-TrackList.createFilters    = List.createFilters;
-TrackList.createShorthands = List.createShorthands;
+TrackList.extend = fab.extend; // TrackList can extend itself and/or its prototype
+TrackList.extend(TrackList, List); // Copy List's static methods in TrackList
+TrackList.extend(List.prototype); // Copy List's prototype's methods in TrackList's prototype
 
-// Create the filters in the prototype
-TrackList.createFilters({
+// Create some filters in the prototype
+TrackList.filters({
 	active:   { active:   true },
 	disabled: { disabled: true },
 	hidden:   { hidden:   true },
@@ -500,22 +450,20 @@ TrackList.createFilters({
 	metadata:     { kind: "metadata" }
 });
 
-// Create the shorthands in the prototype
-TrackList.createShorthands(["disable", "hide", "show"]);
+// Create some shorthands methods
+TrackList.shorthands(["disable", "hide", "show"]);
 
 
 /**
  * The TrackCue class
  * @constructor
- *
- * @returns {TrackCue} A new TrackCue instance
  */
-function TrackCue( startTime, endTime, text ) {
+function TrackCue(start, end, text) {
 	this.track       = null;
 
 	this.id          = "";
-	this.startTime   = startTime;
-	this.endTime     = endTime;
+	this.start       = start;
+	this.end         = end;
 	this.pauseOnExit = false;
 	this.vertical    = TrackCue.DIRECTION.HORIZONTAL;
 	this.snapToLines = true;
@@ -524,278 +472,91 @@ function TrackCue( startTime, endTime, text ) {
 	this.size        = 100;
 	this.align       = TrackCue.ALIGN.MIDDLE;
 	this.text        = text || "";
-
-	// TODO
-	//this.onenter;
-	//this.onexit;
-} // end of TrackCue constructor
-
-TrackCue.prototype = new Item(); // Inherit from Item
-TrackCue.prototype.constructor = Track; // Don't forget to correct the constructor
+} // end of TrackCue()
 
 
-/**
- * An hash of possible alignments
- * @static
- * @type {object}
- */
-TrackCue.ALIGN = {
-	START:  "start",
-	MIDDLE: "middle",
-	END:    "end",
-	LEFT:   "left",
-	RIGHT:  "right"
-};
+// TrackCue can extend and will extend itself (statically)
+TrackCue.extend = fab.extend;
+TrackCue.extend(TrackCue, {
+	/**
+	 * An hash of possible alignments
+	 * @type {object}
+	 */
+	ALIGN: {
+		START:  "start",
+		MIDDLE: "middle",
+		END:    "end",
+		LEFT:   "left",
+		RIGHT:  "right"
+	},
+
+	/**
+	 * An hash of possible directions
+	 * @type {object}
+	 */
+	DIRECTION: {
+		HORIZONTAL:    "",
+		VERTICALLEFT:  "rl",
+		VERTICALRIGHT: "lr"
+	}
+}); // end of TrackCue.extend(TrackCue)
 
 
-/**
- * An hash of possible directions
- * @static
- * @type {object}
- */
-TrackCue.DIRECTION = {
-	HORIZONTAL:    "",
-	VERTICALLEFT:  "rl",
-	VERTICALRIGHT: "lr"
-};
+// Extend the TrackCue's prototype
+TrackCue.extend(fab.event.api); // Add the event listener interface (on(), off() and trigger())
+TrackCue.extend({
+	/**
+	 * Return a document fragment containing the cue's text.
+	 * Still WIP since it must implement WebVTT's DOM construction (see http://dev.w3.org/html5/webvtt/#dfn-webvtt-cue-text-dom-construction-rules)
+	 *
+	 * @param {undefined}
+	 * @return {DocumentFragment} Return a document fragment containing the cue's text.
+	 */
+	getCueAsHTML: function getCueAsHTML() {
+		var
+			fragment  = document.createDocumentFragment(),
+			container = document.createElement("p");
 
+		container.innerHTML = this.text;
+		fragment.appendChild(container);
 
-/**
- * Return a document fragment containing the cue's text.
- * Still WIP since it must implement WebVTT's DOM construction (see http://dev.w3.org/html5/webvtt/#webvtt-cue-text-dom-construction-rules)
- * @function
- *
- * @returns {DocumentFragment}
- */
-TrackCue.prototype.getCueAsHTML = function() {
-	var
-		fragment  = document.createDocumentFragment(),
-		container = document.createElement("p");
-
-	container.innerHTML = this.text;
-	fragment.appendChild( container );
-
-	return fragment;
-}; // end of getCueAsHTML()
+		return fragment;
+	} // end of getCueAsHTML()
+});
 
 
 /**
  * The TrackCueList class
  * @constructor
- *
- * @returns {TrackCueList} A new TrackCueList instance
  */
-function TrackCueList() {
-	this.init(); // Initialize the list
+function TrackCueList() {}
 
+
+// The only allowed item in this list is Track
+TrackCueList.item = TrackCue;
+
+TrackCueList.extend = fab.extend; // TrackCueList can extend itself and/or its prototype
+TrackCueList.extend(TrackList, List); // Copy List's static methods in TrackCueList
+TrackCueList.extend(List.prototype); // Copy List's prototype's methods in TrackCueList's prototype
+
+// Extend TrackCueList's prototype
+TrackCueList.extend({
 	/**
-	 * Retrieve a cue by its ID
-	 * @function
+	 * Search for a TrackCue having a given id
+	 * This is basically the same as calling get({id: "foo"})
 	 *
-	 * @params {string} id The ID of the cue to retrieve
-	 *
-	 * @returns {TrackCue|null} Return the TrackCue or null if it wasn't found
+	 * @param {string} id The id to look for.
+	 * @return {TrackCue|null} Return the `TrackCue` found or `null`.
 	 */
-	this.getCueById = function( id ) {
-		var result = id ? this.get({ id: id }, 0) : null;
-		return result instanceof TrackCue ? result : null;
-	}; // end of getCueById()
-
-} // end of TrackCueList constructor
-
-TrackCueList.item = TrackCue; // The kind of item accepted in the list
-TrackCueList.prototype = new List(); // Inherit from List
-TrackCueList.prototype.constructor = TrackCueList; // Don't forget to correct the constructor
+	getCueById: function getCueById(id) {
+		return this.get({ id: id }).get(0) || null;
+	} // end of getCueById()
+}); //end of TrackCueList.extend()
 
 
 // Expose
-fab.Item = Item;
-fab.List = List;
-
+fab.List         = List;
 fab.Track        = Track;
 fab.TrackList    = TrackList;
 fab.TrackCue     = TrackCue;
 fab.TrackCueList = TrackCueList;
-
-
-/**
- * TODO
- */
-function cycle() {
-	var
-		currentTime = this.currentTime(),
-		tracks      = this.tracks.active(),
-		i, count = tracks.length(), track, // Loop specific
-		j, kount, cue; // Loop specific
-
-	// Loop through each active tracks
-	for (i = 0; i < count; i++ ) {
-		track = tracks.get( i );
-
-		// Loop through each active cues to disable the outdated
-		for (j = 0, kount = track.activeCues().length(); j < kount; j++) {
-			cue = track.activeCues().get( j );
-
-			if (currentTime > cue.endTime) {
-				// Remove this cue from the activeCues list
-				track.activeCues().del( j );
-
-				// FIXME: temporary dispatch a exitcue event
-				this.trigger({
-					type: "exitcue",
-					cue: cue
-				});
-
-				// TODO
-				//if (cue.onexit) {
-					//cue.onexit.call( this );
-				//} // end of if (cue.onexit)
-			} // if (currentTime > cue.endTime)
-		}
-
-		// Loop through each cues to find which one to activate
-		for (j = 0, kount = track.cues().length(); j < kount; j++) {
-			cue = track.cues().get( j );
-
-			try {
-				track.activeCues().index( cue );
-				continue;
-			} catch (e) {}
-
-			if (currentTime >= cue.startTime && currentTime <= cue.endTime) {
-				track.activeCues().add( cue );
-
-				// FIXME: temporary dispatch a entercue event
-				this.trigger({
-					type: "entercue",
-					cue: cue
-				});
-
-				// TODO
-				//if (cue.onenter) {
-					//cue.onenter.call( this );
-				//}
-			}
-		} // end of for
-	} // end of for
-} // end of cycle()
-
-
-// Extend the framework with new methods
-fab.extend({
-	/**
-	 * TODO
-	 */
-	init: function() {
-		// Don't execute while extending
-		if (fab.extending) {
-			return;
-		}
-
-		// Initialize the main track list
-		this.tracks = new fab.TrackList();
-
-		// Continue initialization
-		this._super.apply( this, arguments );
-	}, // end of init()
-
-
-	/**
-	 * TODO
-	 */
-	config: function( config ) {
-		var
-			i, count, track, // Loop specific
-			j, kount, cue;
-
-		if (config && config.src) {
-			this.tracks.del(); // Reset the tracklist when changing the source
-
-			// We have some tracks in the config!
-			if (config.tracks) {
-				// Loop through tracks to add them
-				for (i = 0, count = config.tracks.length; i < count; i++) {
-					// Create the new track
-					track = this.addTrack( config.tracks[i].kind, config.tracks[i].label, config.tracks[i].lang );
-
-					// Loop through each cue to add them to the track
-					for (j = 0, kount = config.tracks[i].cues.length; j < kount; j++) {
-						cue = config.tracks[i].cues[j]; // More convenient :)
-						track.addCue( new fab.TrackCue( cue.startTime, cue.endTime, cue.text ) );
-					} // end of for
-				} // end of for
-			} // end of if (config.tracks)
-		} // end of if (config.src)
-
-		return this._super( config ); // Chaining
-	}, // end of config()
-
-
-	/**
-	 * Add a track or a new track to the tracklist of the player.  Warning: breaks the chaining.
-	 * @function
-	 *
-	 * @param {string|Track} kind The kind of track to create or an already created Track
-	 * @param {string} [label=""] The label of the track
-	 * @param {string} [lang=""] The language of the track
-	 *
-	 * @returns {Track} Return the added track
-	 */
-	addTrack: function( kind, label, lang ) {
-		var track; // The track we'll add to the track list
-
-		// Use a try/catch since creating a track without a "kind" may throw a SYNTAX_ERR exception
-		try {
-			track = kind instanceof fab.Track ? kind : new fab.Track( kind, label, lang );
-		} catch(e) {
-			throw e;
-		}
-
-		// Add the track to the list of tracks
-		this.tracks.add( track );
-
-		// Trigger a "addtrack" event and pass the new track to the event
-		this.trigger({
-			type: "addtrack",
-			track: track
-		});
-
-		// Enable the cues' cycling function
-		this.on( "timeupdate", cycle );
-
-		// Return the created track
-		return track;
-	} // end of addTrack()
-
-}); // end of fab.extend()
-
-
-/**
- * Exception class
- * @constructor
- *
- * @params {number} code The error code to create
- *
- * @returns {Exception} A new Exception instance
- */
-function Exception(code) {
-	this.name = "fabuloos error";
-	this.code = code;
-
-	// Loop through each property to find the static var related to this code
-	for (var prop in Exception) {
-		if (Exception[prop] === code) {
-			this.message = prop;
-		}
-	}
-} // end of Exception constructor
-
-Exception.prototype = new Error(); // Inherit from Error
-Exception.prototype.constructor = Exception; // Don't forget to correct the constructor
-
-// Mimic the DOMException error codes
-Exception.NOT_FOUND_ERR = 8;
-Exception.SYNTAX_ERR    = 12;
-
-// Expose
-fab.Exception  = Exception;
