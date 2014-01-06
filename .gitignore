@@ -1,5 +1,9 @@
 # Ignoring the build folder
 build/
 
+# Ignore dev dependencies
+node_modules/
+bower_components/
+
 # OSX Files
 .DS_Store
