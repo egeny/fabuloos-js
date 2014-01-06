@@ -8,7 +8,7 @@ module.exports = function( grunt ) {
 		meta: {
 			name:    "fabuloos",
 			version: "1.0.0-beta",
-			banner:  "/*! <%= meta.name %> v<%= meta.version %> | (c) 2011, 2013 eGeny, Inc. | fabuloos.org/license */"
+			banner:  "/*! <%= meta.name %> v<%= meta.version %> | ©2014 eGeny, Inc. | fabuloos.org/license */\n"
 		},
 
 		// Lint task
@@ -24,7 +24,7 @@ module.exports = function( grunt ) {
 				// Core modules
 				"src/core.js",
 				"src/event.js",
-				"src/api.js",
+				//"src/api.js",
 
 				// Renderers
 				"src/renderers/Renderer.js",
@@ -32,14 +32,11 @@ module.exports = function( grunt ) {
 				"src/renderers/HTMLRenderer.js",
 				"src/renderers/FabuloosFlashRenderer.js",
 				"src/renderers/YoutubeRenderer.js",
-				"src/renderers/DailymotionRenderer.js",
+				//"src/renderers/DailymotionRenderer.js",
 
 				// Plugins
-				"src/plugins/tracks.js",
-				"src/plugins/timed.js",
-				"src/plugins/playlist.js",
-				"src/plugins/ads.js",
-				"src/plugins/tracker.js"
+				//"src/plugins/tracks.js",
+				//"src/plugins/playlist.js"
 			],
 
 			dest: "build/<%= meta.name %>-<%= meta.version %>.js"
@@ -53,7 +50,7 @@ module.exports = function( grunt ) {
 
 		// QUnit task
 		qunit: {
-			files: ["test/**/*.html"]
+			files: ["tests.html"]
 		},
 
 		// JSHint options
