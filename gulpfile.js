@@ -30,8 +30,8 @@ var
 		//"src/renderers/DailymotionRenderer.js",
 
 		// Plugins
-		//"src/plugins/tracks.js",
-		//"src/plugins/playlist.js"
+		"src/plugins/tracks.js",
+		"src/plugins/playlist.js"
 	],
 
 	// JSHint options

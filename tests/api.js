@@ -3,8 +3,8 @@ module("api");
 test("src() accept multiple signatures", function() {
 	var
 		player  = fab(),
-		source  = "http://ad2play/ressources/demoreel-2009.mp4",
-		source2 = "http://ad2play/ressources/demoreel-2009.ogv";
+		source  = "http://res/demoreel-2009.mp4",
+		source2 = "http://res/demoreel-2009.ogv";
 
 	equal(player._config.src, undefined, "There is no source when creating a new player");
 
