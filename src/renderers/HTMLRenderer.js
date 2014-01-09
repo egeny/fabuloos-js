@@ -122,7 +122,10 @@ HTMLRenderer.extend({
 
 			// Set the element's attributes according to configuration
 			for (prop in this.config) {
-				this.element[prop] = this.config[prop];
+				try {
+					// Some properties might not be settable (currentTime)
+					this.element[prop] = this.config[prop];
+				} catch (e) {}
 			}
 		}
 
