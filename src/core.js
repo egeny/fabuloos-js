@@ -1,6 +1,7 @@
 /*jshint newcap: false */
 /*global Renderer */
 
+var
 /**
  * The fabuloos function
  * Use it to create a new fabuloos player or to get an existing one from the instances' cache.
@@ -19,38 +20,36 @@
  * @param {undefined}
  * @return {fabuloos} Return a new fabuloos instance.
  */
-function fab(config) {
-	// Check if we're trying to create an instance of fab
-	if (this instanceof fab) {
-		// Then, initialize it
-		return this.init(config);
-	}
-
-	var
-		// First, find the element (might be { element: "div" } or "div")
-		element = config ? config.element || config : {},
-
-		// Then find the id
-		// It might be a string (simply use it after removing the debuting hash)
-		// Or an Element, simply try to retrieve its id
-		id = element.replace ? element.replace("#", "") : element.id,
-
-		// Loop specific
-		i = 0, instance;
-
-	// Search for an instance in the cache having this id
-	while (id && (instance = fab.instances[i++])) {
-		if (instance._id === id) {
-			return instance;
+	fab = function fabuloos(config) {
+		// Check if we're trying to create an instance of fab
+		if (this instanceof fab) {
+			// Then, initialize it
+			return this.init(config);
 		}
-	}
 
-	// No instance found, create a new one
-	return new fab(config);
-} // end of fab()
+		var
+			// First, find the element (might be { element: "div" } or "div")
+			element = config ? config.element || config : {},
 
+			// Then find the id
+			// It might be a string (simply use it after removing the debuting hash)
+			// Or an Element, simply try to retrieve its id
+			id = element.replace ? element.replace("#", "") : element.id,
 
-var
+			// Loop specific
+			i = 0, instance;
+
+		// Search for an instance in the cache having this id
+		while (id && (instance = fab.instances[i++])) {
+			if (instance._id === id) {
+				return instance;
+			}
+		}
+
+		// No instance found, create a new one
+		return new fab(config);
+	}, // end of fabuloos()
+
 	/**
 	 * The properties we can get
 	 * @type {string}
