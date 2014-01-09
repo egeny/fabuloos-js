@@ -59,12 +59,13 @@ function handle(event) {
 	event.currentTarget = this;
 
 	var
-		handler, // Loop specific
-		handlers = fab.event.cache(this).handlers[event.type] || [], // Retrieve the handlers for this type
-		result   = true;
+		cache    = fab.event.cache(this), // Retrieve the element's cache
+		result   = true, // We have to remember the result of each handler
+		handlers = [], // Prepare the stack of handlers to launch (see below)
+		handler; // Loop specific;
 
-	// Work on a copy of the cache
-	handlers = handlers.slice(0);
+	// Concatenate the handlers for all events (debug purpose) and the handlers for this type
+	handlers = handlers.concat(cache.handlers["*"] || [], cache.handlers[event.type] || []);
 
 	// Loop through the handlers
 	while ((handler = handlers.shift())) {
