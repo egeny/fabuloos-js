@@ -15,6 +15,34 @@ Playlist.extend(List.prototype); // Copy List's prototype's methods in Playlist'
 // Extend the Playlist's prototype
 Playlist.extend({
 	/**
+	 * Add an item to the list
+	 * Surcharged to avoid adding bad items.
+	 * @see #List.prototype.add() for other signatures.
+	 */
+	add: function add() {
+		var i = 0, count = arguments.length, item; // Loop specific
+
+		// Loop through each item to add
+		for (; i < count; i++) {
+			item = arguments[i]; // More convenient
+
+			// Ignore falsy items (undefined, null or "")
+			if (!item) { continue; }
+
+			// Handling string would be too complex, simple convert to an object
+			if (typeof item === "string") {
+				item = { src: item };
+			}
+
+			// Add the item (other types will be ignored)
+			this._super(item);
+		}
+
+		return this; // Chaining
+	}, // end of add()
+
+
+	/**
 	 * The current item
 	 * @type {number}
 	 */
@@ -149,28 +177,15 @@ fab.extend({
 	playlist: function playlist(config) {
 		var
 			_playlist = this._playlist = this._playlist || new Playlist(), // Makes sure we always have an internal playlist
-			_config   = config ? (config.push ? config.slice(0) : [config]) : [], // Makes sure we always have an array
-			i = 0, count = _config.length, item; // Loop specific
+			_config   = config ? (config.push ? config.slice(0) : [config]) : []; // Makes sure we always have an array
 
 		// No config, act as a getter
 		if (config === undefined) {
 			return this._playlist;
 		}
 
-		// Loop through each item of the config
-		for (; i < count; i++) {
-			item = config[i]; // More convenient
-
-			if (!item) { continue; }
-
-			// Handling string would be too complex, simple convert to an object
-			if (typeof item === "string") {
-				item = { src: item };
-			}
-
-			// Add the item (other types will be ignored)
-			_playlist.add(item);
-		}
+		// Add the items to the playlist
+		_playlist.add.apply(_playlist, _config);
 
 		// Set the first item
 		this.first();
