@@ -3,6 +3,7 @@ var
 	concat = require("gulp-concat"),
 	footer = require("gulp-footer"),
 	header = require("gulp-header"),
+	jscs   = require("gulp-jscs"),
 	jshint = require("gulp-jshint"),
 	rename = require("gulp-rename"),
 	uglify = require("gulp-uglify"),
@@ -36,16 +37,23 @@ var
 
 	// JSHint options
 	options = {
-		curly:     true,
-		noempty:   true,
-		boss:      true,
-		evil:      false,
-		smarttabs: true,
-		sub:       false,
-		validthis: true,
-		browser:   true,
-		globals: {
-			fab: true
+		"curly":    true,
+		"eqeqeq":   true,
+		"freeze":   true,
+		"immed":    true,
+		"newcap":   false,
+		"noarg":    true,
+		"noempty":  true,
+		"quotmark": "double",
+		"undef":    true,
+		"unused":   true,
+		"trailing": true,
+
+		"browser":  true,
+
+		"globals": {
+			"fab":      true,
+			"Renderer": true,
 		}
 	};
 
@@ -63,6 +71,7 @@ gulp.task("build", function() {
 
 gulp.task("lint", function() {
 	gulp.src(files)
+	    .pipe(jscs())
 	    .pipe(jshint(options))
 	    .pipe(jshint.reporter("jshint-stylish"));
 });

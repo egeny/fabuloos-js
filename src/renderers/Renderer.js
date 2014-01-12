@@ -1,5 +1,4 @@
-/*jshint newcap: false */
-/*global ActiveXObject */
+/* global ActiveXObject */
 
 /**
  * The base Renderer class
@@ -85,7 +84,7 @@ var
  * @param {object} ... The objects to merge together.
  * @return {undefined} Return nothing.
  */
-Renderer.extend = function extend(obj) {
+Renderer.extend = function extend() {
 	var
 		args = Array.prototype.slice.call(arguments), // Cast arguments to array
 		i, source, target, prop; // Loop specific

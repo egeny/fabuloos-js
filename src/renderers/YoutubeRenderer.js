@@ -1,4 +1,4 @@
-/*global Renderer, FlashRenderer, YT */
+/* global FlashRenderer, YT */
 
 /**
  * The YoutubeRenderer class
@@ -228,7 +228,7 @@ YoutubeRenderer.extend({
 				swf = YoutubeRenderer.swf; // We have to change the SWF's URL to add some parameters
 
 			// Prepare the SWF URL
-			swf  = swf.replace('{id}', id); // Replace a token for the videoId ({id}) with the actual id
+			swf  = swf.replace("{id}", id); // Replace a token for the videoId ({id}) with the actual id
 			swf += "&playerapiid=" + this.config.id; // Append the "playerapiid" to the SWF's URL to correctly dispatch events
 
 			// Add the rest of the parameters
@@ -314,7 +314,7 @@ YoutubeRenderer.extend({
 			break;
 
 			case "src":
-				this.api.loadVideoById(value.replace(YoutubeRenderer.rYoutube, '$1'));
+				this.api.loadVideoById(value.replace(YoutubeRenderer.rYoutube, "$1"));
 			break;
 
 			case "volume":

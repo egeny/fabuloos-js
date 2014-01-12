@@ -99,7 +99,7 @@ List.extend({
 		for (; i < count; i++) {
 			// Only allow adding supported items
 			if (arguments[i] instanceof this.constructor.item) {
-				this.list.push(arguments[i]);
+				list.push(arguments[i]);
 			}
 		} // end of for
 

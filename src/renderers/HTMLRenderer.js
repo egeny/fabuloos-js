@@ -1,5 +1,3 @@
-/*global Renderer */
-
 /**
  * The HTMLRenderer class
  * @constructor

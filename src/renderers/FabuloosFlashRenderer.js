@@ -1,4 +1,4 @@
-/*global Renderer, FlashRenderer */
+/* global FlashRenderer */
 
 /**
  * The FabuloosFlashRenderer class
@@ -49,9 +49,9 @@ FabuloosFlashRenderer.extend(FabuloosFlashRenderer, {
 	 * Check if a given URL is readable by this renderer
 	 * @see #Renderer.canPlay()
 	 */
-	canPlay: function canPlay(url, type) {
+	canPlay: function canPlay() {
 		// Test for RTMP or use the basic Renderer's canPlay
-		return FabuloosFlashRenderer.rRTMP.test(url) ? "probably" : Renderer.canPlay.apply(this, arguments);
+		return FabuloosFlashRenderer.rRTMP.test(arguments[0]) ? "probably" : Renderer.canPlay.apply(this, arguments);
 	}, // end of Renderer.canPlay()
 
 

@@ -1,3 +1,5 @@
+/* global List */
+
 /**
  * The Playlist class
  * @constructor

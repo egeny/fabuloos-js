@@ -30,6 +30,7 @@
 		"gulp-concat":    "*",
 		"gulp-footer":    "*",
 		"gulp-header":    "*",
+		"gulp-jscs":      "*",
 		"gulp-jshint":    "*",
 		"gulp-rename":    "*",
 		"gulp-uglify":    "*",

@@ -1,5 +1,3 @@
-/*global Renderer */
-
 /**
  * The base FlashRenderer class
  * @abstract @constructor

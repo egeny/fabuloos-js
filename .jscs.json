@@ -1,0 +1,20 @@
+{
+	"requireCurlyBraces": ["if", "else", "for", "while", "do", "try", "catch"],
+	"requireSpaceAfterKeywords": ["if", "else", "for", "while", "do", "switch", "return", "try", "catch"],
+	"requireMultipleVarDecl": true,
+	"disallowSpacesInsideArrayBrackets": true,
+	"disallowSpacesInsideParentheses": true,
+	"requireSpacesInsideObjectBrackets": "allButNested",
+	"disallowQuotedKeysInObjects": "allButReserved",
+	"disallowSpaceAfterObjectKeys": true,
+	"disallowLeftStickedOperators": ["?", "-", "/", "*", "=", "==", "===", "!=", "!==", ">", ">=", "<", "<="],
+	"requireRightStickedOperators": ["!"],
+	"requireLeftStickedOperators": [","],
+	"disallowSpaceAfterPrefixUnaryOperators": ["++", "--", "+", "-", "~"],
+	"requireSpaceBeforeBinaryOperators": ["+", "-", "/", "*", "=", "==", "===", "!=", "!=="],
+	"requireSpaceAfterBinaryOperators": ["+", "-", "/", "*", "=", "==", "===", "!=", "!=="],
+	"disallowKeywords": ["with"],
+	"validateLineBreaks": "LF",
+	"disallowKeywordsOnNewLine": ["else"],
+	"safeContextKeyword": "that"
+}

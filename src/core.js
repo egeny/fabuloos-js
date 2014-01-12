@@ -1,6 +1,3 @@
-/*jshint newcap: false */
-/*global Renderer */
-
 var
 /**
  * The fabuloos function
@@ -187,7 +184,7 @@ function measure(element, property) {
  *
  *   fab.clear(); // "Clear"
  */
-fab.extend = function extend(obj) {
+fab.extend = function extend() {
 	var
 		args = Array.prototype.slice.call(arguments), // Cast arguments to array
 		i, source, target, prop; // Loop specific
@@ -248,6 +245,7 @@ fab.extend(fab, {
 	toArray: function toArray(obj) {
 		return Array.prototype.slice.call(obj);
 	}, // end of toArray()
+
 
 	/**
 	 * A simple instance counter
@@ -496,7 +494,7 @@ fab.extend({
 		 *
 		 * The sources will only be searched if there is no current sources
 		 */
-		if (this._element && rMedia.test(this._element.nodeName)/* && (!this._sources || this._sources.length === 0)*/) {
+		if (this._element && rMedia.test(this._element.nodeName)) {
 			attributes = fab.toArray(this._element.attributes);
 
 			// Watch for attributes
@@ -720,7 +718,7 @@ fab.extend({
 	 * @return {Renderer|undefined} Return the current renderer.
 	 */
 	renderer: function renderer(_renderer) {
-		var instance = this;
+		var that = this;
 
 		// No renderer received, acting like a getter
 		if (!_renderer) {
@@ -766,13 +764,13 @@ fab.extend({
 		// Wait for the renderer to be ready
 		this._renderer.ready(function() {
 			// Keep a reference to the element
-			instance._element = this.element;
+			that._element = this.element;
 
 			// Attach all listeners
-			instance.attach();
+			that.attach();
 
 			// Dispatch a "rendererready" event
-			instance.trigger("renderer.ready");
+			that.trigger("renderer.ready");
 		});
 
 		return this; // Chaining
@@ -809,7 +807,7 @@ fab.extend({
 			i = 0, renderer; // Loop specific
 
 		// Loop through each renderers to test them
-		while((renderer = supported[i])) {
+		while ((renderer = supported[i])) {
 			// Test the renderer and remove it if unsupported
 			i += "isSupported" in renderer && renderer.isSupported ? 1 : (supported.splice(i, 1)).length - 1;
 		}
@@ -1043,7 +1041,7 @@ fab.extend({
 		var
 			// An array is more convenient (remember to clone existing one in order to keep the original clean)
 			_sources = value.push ? value.slice(0) : [value],
-			_source, source, prop, renderers, renderer; // Loop specific
+			_source, source, renderers, renderer; // Loop specific
 
 		// Initialize the sources stack
 		this._sources = [];
