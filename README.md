@@ -1,6 +1,6 @@
 # [![fabuloos](http://fabuloos.org/img/fabuloos.svg)](http://fabuloos.org)
 
-[Fabuloos](http://fabuloos.org) is an unique, intuitive and powerful framework for faster and easier media playback.
+[Fabuloos](http://fabuloos.org) is an unique, intuitive and powerful framework for media playback.
 
 This README file will guide you through…
 
@@ -9,29 +9,25 @@ This README file will guide you through…
 * [How to build](#how-to-build)
 * [How to test](#how-to-test)
 * [How to get support](#how-to-get-support)
-* [Licence](#licence)
 
 ## How to use
 
 There is only 4 little steps to your success:
 
 1. [Download](http://fabuloos.org/download/) the last stable version of fabuloos and add it to your project:
-
 ```
 <script src="/js/fabuloos.min.js"></script>
 ```
 
 2. Add an HTML5 `<video>` or `<audio>` element:
-
 ```
 <video id="player" src="/videos/awesome.mp4"></video>
 ```
 
 3. Make your player fabuloos:
-
 ```
 <script>
-	var player = fab("player");
+  var player = fab("player");
 </script>
 ```
 
@@ -45,7 +41,7 @@ If you love fabuloos, first of all: **thank you**. Then, help us making it even 
 
 One of the most important thing you can do is to **spread the word**, talk about it (even if you have to criticize), **use it** (push it to the limits!) and if you find something missing or broken, [**request a feature**](https://github.com/egeny/fabuloos-js/issues/new) or [**report a bug**](https://github.com/egeny/fabuloos-js/issues/new).
 
-If you are confident with writing code, you can also write (awesome) [**plugins**](http://fabuloos.org/documentation/plugins.html) and [**renderers**](http://fabuloos.org/documentation/plugins.html). Feel free to join us as a contributor by [**forking**](https://github.com/egeny/fabuloos-js/fork) and asking for [**pull requests**](https://github.com/egeny/fabuloos-js/compare/).
+If you are confident with writing code, you can also write (awesome) [**plugins**](http://fabuloos.org/documentation/plugins.html) and [**renderers**](http://fabuloos.org/documentation/renderers.html). Feel free to join us as a contributor by [**forking**](https://github.com/egeny/fabuloos-js/fork) and asking for [**pull requests**](https://github.com/egeny/fabuloos-js/compare/).
 
 ## How to build
 
@@ -72,10 +68,8 @@ The `FabuloosFlashRenderer` need its SWF file in order to have a Flash fallback.
 
 ## How to test
 
-Tests are ongoing
+The testing procedure is ongoing.
 
 ## How to get support
 
-github
-
-## Licence
+For now, the only way to get support is through this [repository issues](https://github.com/egeny/fabuloos-js/issues).
