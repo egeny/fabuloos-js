@@ -1,102 +1,81 @@
-# fabuloos.js
+# [![fabuloos](http://fabuloos.org/img/fabuloos.svg)](http://fabuloos.org)
 
-## Contribute
--------------
+[Fabuloos](http://fabuloos.org) is an unique, intuitive and powerful framework for faster and easier media playback.
 
-There is many way to help the fabuloos project. Here is a quick start:
+This README file will guide you through…
 
-1. [Ways to contributing to the project](http://fabuloos.org/contribute)
-2. [Report a bug or request a feature](http://bugs.fabuloos.org)
-3. [Coding guidelines](http://fabuloos.org/contribute/js)
-4. [Git guidelines](http://fabuloos.org/contribute/js)
+* [How to use](#how-to-use)
+* [How to contribute](#how-to-contribute)
+* [How to build](#how-to-build)
+* [How to test](#how-to-test)
+* [How to get support](#how-to-get-support)
+* [Licence](#licence)
 
-## Building fabuloos
---------------------
-(The command lines below are assumed to be launched in project's folder)
+## How to use
 
-In order to build fabuloos, makes sure you have [NodeJS and NPM](http://nodejs.org) installed.  
-Then, install the requested NPM modules with `npm install`.
+There is only 4 little steps to your success:
 
-Here is the collection of grunt tasks in order to build and check the fabuloos' code:
-
-### default
+1. [Download](http://fabuloos.org/download/) the last stable version of fabuloos and add it to your project:
 
 ```
-grunt
+<script src="/js/fabuloos.min.js"></script>
 ```
 
-Will launch the `lint:pre`, `concat`, `min` and `lint:post` tasks.
-
-### lint
+2. Add an HTML5 `<video>` or `<audio>` element:
 
 ```
-grunt lint
-grunt lint:pre # (same as above)
-grunt lint:post
+<video id="player" src="/videos/awesome.mp4"></video>
 ```
 
-This task launch JSHint on the sources files.  
-Here is the JSHint options defined in the grunt file:
+3. Make your player fabuloos:
 
 ```
-curly:     true
-noempty:   true
-strict:    true
-boss:      true
-evil:      false
-smarttabs: true
-sub:       false
-validthis: true
-browser:   true
-
-globals: fab
+<script>
+	var player = fab("player");
+</script>
 ```
 
-You can specify some additional option per file using the JSHint comment syntax:
+4. Enjoy the [API](http://fabuloos.org/documentation/api/)!
 
-```
-/*jshint newcap: false */
-```
+You can also build a [custom version](#how-to-build) of fabuloos to include or exlude components.
 
-The default flag is `pre` to check all the files, you can use `post` to check the concatened file.
+## How to contribute
 
-### concat
+If you love fabuloos, first of all: **thank you**. Then, help us making it even better.
 
-```
-grunt concat
-```
+One of the most important thing you can do is to **spread the word**, talk about it (even if you have to criticize), **use it** (push it to the limits!) and if you find something missing or broken, [**request a feature**](https://github.com/egeny/fabuloos-js/issues/new) or [**report a bug**](https://github.com/egeny/fabuloos-js/issues/new).
 
-This task simply concatenate all the sources files in the final file.
-To add or remove a plugin or a renderer you have to edit the grunt file.
+If you are confident with writing code, you can also write (awesome) [**plugins**](http://fabuloos.org/documentation/plugins.html) and [**renderers**](http://fabuloos.org/documentation/plugins.html). Feel free to join us as a contributor by [**forking**](https://github.com/egeny/fabuloos-js/fork) and asking for [**pull requests**](https://github.com/egeny/fabuloos-js/compare/).
 
-### min
+## How to build
 
-```
-grunt min
-```
+In order to compile a custom version of fabuloos you have to install [node.js](http://nodejs.org) and [NPM](https://npmjs.org/).
 
-This task simply minify using UglifyJS the concatened sources.
+* If you are on OSX, we recommend installing with [Homebrew](http://brew.sh/) (`brew install node` and have a coffee).
+* If you are on Linux, you probably can use your beloved package manager.
+* If you are on Windows, I'm sorry for you. OK, have a look [here](http://nodejs.org/download/).
 
-### qunit
+Then, you have two options:
 
-```
-grunt qunit
-```
+1. Launch `build.command` (double-clicking might work depending on your platform).  
+The script will install the dependencies and, hopefully, build fabuloos.
+2. Open a terminal console, browse to the folder and launch:  
+	* `npm install gulp -g` to install [gulp](http://gulpjs.com) globally,
+	* `npm install` to install the dependencies,
+	* Finally, `gulp` to build fabuloos.
 
-This task launch the unit tests in a phantomJS browser (so, please makes sure there is a PhantomJS installed in your system).
+You should see a `build` folder with an uncompressed version and a minified one.
 
-### lazytests
+You can select which files to include during the build by editing the `gulpfile.js`.
 
-```
-grunt lazytests
-```
+The `FabuloosFlashRenderer` need its SWF file in order to have a Flash fallback. Have a look to the [dedicated repository](https://github.com/egeny/fabuloos-flash) to build it. A pre-compiled version is coming for your convenience.
 
-This task launch the unit tests in all available browsers sequentially.
-Here is the browser searched on your system:
+## How to test
 
-* Firefox (all versions including Aurora, Firefox Nightly and Firefox UX)
-* Chrome including Chrome Canary
-* Safari and WebKit
-* Opera and Opera Next
-* Internet Explorer (compatibility mode isn't supported due to differences in JavaScript implementation). IE will be launched via VMWare if found and configured in the grunt's configuration.
-* Safari's iOS if the iOS Simulator can be found.
+Tests are ongoing
+
+## How to get support
+
+github
+
+## Licence
