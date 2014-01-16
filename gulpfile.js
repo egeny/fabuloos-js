@@ -12,7 +12,7 @@ var
 	version      = "1.0.0-beta",
 	uncompressed = project + "-" + version + ".js",
 	minified     = project + "-" + version + ".min.js",
-	license      = "/*! fabuloos v{{ version }} | ©2014 eGeny, Inc. | fabuloos.org/license */",
+	license      = "/*! fabuloos v{{ version }} | ©2014 eGeny, Inc. | apache.org/licenses/LICENSE-2.0 */",
 	folder       = "./build/",
 
 	// File to build
@@ -37,31 +37,31 @@ var
 
 	// JSHint options
 	options = {
-		"curly":    true,
-		"eqeqeq":   true,
-		"freeze":   true,
-		"immed":    true,
-		"newcap":   false,
-		"noarg":    true,
-		"noempty":  true,
-		"quotmark": "double",
-		"undef":    true,
-		"unused":   true,
-		"trailing": true,
+		curly:    true,
+		eqeqeq:   true,
+		freeze:   true,
+		immed:    true,
+		newcap:   false,
+		noarg:    true,
+		noempty:  true,
+		quotmark: "double",
+		undef:    true,
+		unused:   true,
+		trailing: true,
 
-		"browser":  true,
+		browser:  true,
 
-		"globals": {
-			"fab":      true,
-			"Renderer": true,
+		globals: {
+			fab:      true,
+			Renderer: true,
 		}
 	};
 
 gulp.task("build", function() {
 	gulp.src(files)
+	    .pipe(concat(uncompressed)) // Concatenate
 	    .pipe(header({ file: "./src/_begin.js", version: version })) // Add the header, change the version placeholder
 	    .pipe(footer({ file: "./src/_end.js" })) // Add the footer
-	    .pipe(concat(uncompressed)) // Concatenate
 	    .pipe(gulp.dest(folder)) // Save to build folder
 	    .pipe(rename(minified)) // Rename for the minified version
 	    .pipe(uglify()) // Well... Uglify
