@@ -9,7 +9,7 @@ var
 	uglify = require("gulp-uglify"),
 
 	project      = "fabuloos",
-	version      = "1.0.0-beta",
+	version      = "1.0.0-alpha",
 	uncompressed = project + "-" + version + ".js",
 	minified     = project + "-" + version + ".min.js",
 	license      = "/*! fabuloos v{{ version }} | ©2014 eGeny, Inc. | apache.org/licenses/LICENSE-2.0 */",
