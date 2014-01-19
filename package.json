@@ -33,6 +33,7 @@
 		"gulp-jscs":      "*",
 		"gulp-jshint":    "*",
 		"gulp-rename":    "*",
+		"gulp-replace":   "*",
 		"gulp-uglify":    "*",
 		"jshint-stylish": "*"
 	},

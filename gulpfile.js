@@ -1,12 +1,13 @@
 var
-	gulp   = require("gulp"),
-	concat = require("gulp-concat"),
-	footer = require("gulp-footer"),
-	header = require("gulp-header"),
-	jscs   = require("gulp-jscs"),
-	jshint = require("gulp-jshint"),
-	rename = require("gulp-rename"),
-	uglify = require("gulp-uglify"),
+	gulp    = require("gulp"),
+	concat  = require("gulp-concat"),
+	footer  = require("gulp-footer"),
+	header  = require("gulp-header"),
+	jscs    = require("gulp-jscs"),
+	jshint  = require("gulp-jshint"),
+	rename  = require("gulp-rename"),
+	replace = require("gulp-replace"),
+	uglify  = require("gulp-uglify"),
 
 	project      = "fabuloos",
 	version      = "1.0.0-alpha",
@@ -62,6 +63,7 @@ gulp.task("build", function() {
 	    .pipe(concat(uncompressed)) // Concatenate
 	    .pipe(header({ file: "./src/_begin.js", version: version })) // Add the header, change the version placeholder
 	    .pipe(footer({ file: "./src/_end.js" })) // Add the footer
+	    .pipe(replace('@VERSION', version)) // Replace the version token
 	    .pipe(gulp.dest(folder)) // Save to build folder
 	    .pipe(rename(minified)) // Rename for the minified version
 	    .pipe(uglify()) // Well... Uglify
