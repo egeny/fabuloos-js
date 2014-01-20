@@ -732,8 +732,7 @@ fab.extend({
 
 		// Check if the renderer is supported before creating it
 		if (!_renderer.isSupported) {
-			// TODO: Trigger a better event
-			return this.trigger("error");
+			return this.trigger("renderer.unsupported");
 		}
 
 		// Dispatch a "renderer.changing" event
@@ -1123,8 +1122,9 @@ fab.extend({
 		}
 
 		var
+			renderers = this._renderers.slice(0), // Copy the available renderers
 			i = 0, source, // Loop specific
-			j = 0, renderer, count = this._renderers.length; // Loop specific
+			j = 0, renderer; // Loop specific
 
 		// Loop through each sources to find a playable one
 		while ((source = this._sources[i++])) {
@@ -1135,13 +1135,9 @@ fab.extend({
 			}
 
 			// Loop through each active renderer
-			for (j = 0; j < count; j++) {
-				renderer = this._renderers[j]; // More convenient
-
+			while ((renderer = renderers[j++])) {
 				// Skip the current renderer since it was tested first
-				if (this._renderer && this._renderer.constructor === renderer) {
-					continue;
-				}
+				if (this._renderer && this._renderer.constructor === renderer) { continue; }
 
 				// The renderers list may have been changed since the sources solutions have been found
 				if (source.solutions[renderer.name] === undefined) {
@@ -1153,8 +1149,11 @@ fab.extend({
 					this._config.src = source.src; // FIXME
 					return this.renderer(renderer); // Change the renderer for this one
 				}
-			} // end of for
+			} // end of while
 		} // end of while
+
+		// If we reached this point it means no renderer could be found
+		this.trigger("no.renderer");
 
 		return this; // Chaining
 	}, // end of src()
