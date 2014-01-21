@@ -1122,7 +1122,6 @@ fab.extend({
 		}
 
 		var
-			renderers = this._renderers.slice(0), // Copy the available renderers
 			i = 0, source, // Loop specific
 			j = 0, renderer; // Loop specific
 
@@ -1135,7 +1134,7 @@ fab.extend({
 			}
 
 			// Loop through each active renderer
-			while ((renderer = renderers[j++])) {
+			while ((renderer = this._renderers[j++])) {
 				// Skip the current renderer since it was tested first
 				if (this._renderer && this._renderer.constructor === renderer) { continue; }
 

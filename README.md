@@ -1,6 +1,6 @@
 # [![fabuloos](http://fabuloos.org/img/fabuloos.svg)](http://fabuloos.org)
 
-[Fabuloos](http://fabuloos.org) is an unique, intuitive and powerful framework for media playback.
+[Fabuloos](http://fabuloos.org) is a unique, intuitive and powerful framework for media playback.
 
 This README file will guide you through…
 
