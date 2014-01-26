@@ -1,5 +1,5 @@
 /*!
- * fabuloos v{{ version }}
+ * fabuloos v@VERSION
  * http://fabuloos.org
  *
  * Copyright 2014 eGeny, Inc.

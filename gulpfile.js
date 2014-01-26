@@ -1,4 +1,5 @@
 var
+	fs      = require("fs"),
 	gulp    = require("gulp"),
 	concat  = require("gulp-concat"),
 	footer  = require("gulp-footer"),
@@ -13,7 +14,7 @@ var
 	version      = "1.0.0-alpha",
 	uncompressed = project + "-" + version + ".js",
 	minified     = project + "-" + version + ".min.js",
-	license      = "/*! fabuloos v{{ version }} | ©2014 eGeny, Inc. | apache.org/licenses/LICENSE-2.0 */",
+	license      = "/*! fabuloos v" + version + " | ©2014 eGeny, Inc. | apache.org/licenses/LICENSE-2.0 */\n",
 	folder       = "./build/",
 
 	// File to build
@@ -61,13 +62,13 @@ var
 gulp.task("build", function() {
 	gulp.src(files)
 	    .pipe(concat(uncompressed)) // Concatenate
-	    .pipe(header({ file: "./src/_begin.js", version: version })) // Add the header, change the version placeholder
-	    .pipe(footer({ file: "./src/_end.js" })) // Add the footer
+	    .pipe(header(fs.readFileSync("./src/_begin.js"))) // Add the header
+	    .pipe(footer(fs.readFileSync("./src/_end.js"))) // Add the footer
 	    .pipe(replace('@VERSION', version)) // Replace the version token
 	    .pipe(gulp.dest(folder)) // Save to build folder
 	    .pipe(rename(minified)) // Rename for the minified version
 	    .pipe(uglify()) // Well... Uglify
-	    .pipe(header(license, { version: version }))
+	    .pipe(header(license)) // Add the special header for minified version
 	    .pipe(gulp.dest(folder)); // Save the minified version
 });
 
@@ -78,6 +79,4 @@ gulp.task("lint", function() {
 	    .pipe(jshint.reporter("jshint-stylish"));
 });
 
-gulp.task("default", function() {
-	gulp.run("lint", "build");
-});
+gulp.task("default", ["lint", "build"]);
