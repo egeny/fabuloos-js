@@ -305,11 +305,21 @@ fab.event = {
 	 * Trigger an event type on the given element
 	 *
 	 * @param {element|object} element The element triggering the event (can be a node or an object).
-	 * @param {string} type The event type to trigger.
+	 * @param {string} types The event types (can be multiple, separated by a space) to listen.
 	 * @return {*} Return the value of the last handler executed or true if there were no handlers.
 	 */
-	trigger: function trigger(element, type) {
-		return handle.call(element, type);
+	trigger: function trigger(element, types) {
+		var type, result = true;
+
+		// Allow multiple events types separated by a space
+		types = types ? types.replace(rTrim, "").split(rSplit) : []; // Trim first to avoid bad splitting
+
+		// Loop through each event types
+		while ((type = types.shift())) {
+			result = handle.call(element, type);
+		}
+
+		return result;
 	}, // end of trigger()
 
 
