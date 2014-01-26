@@ -46,6 +46,13 @@ FabuloosFlashRenderer.inherit(Renderer);
 FabuloosFlashRenderer.extend = Renderer.extend;
 FabuloosFlashRenderer.extend(FabuloosFlashRenderer, {
 	/**
+	 * Define the identifier for this renderer
+	 * @type {string}
+	 */
+	id: "FabuloosFlashRenderer",
+
+
+	/**
 	 * Check if a given URL is readable by this renderer
 	 * @see #Renderer.canPlay()
 	 */

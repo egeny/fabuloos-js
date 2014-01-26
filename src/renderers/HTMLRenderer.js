@@ -24,6 +24,13 @@ HTMLRenderer.inherit(Renderer);
 HTMLRenderer.extend = Renderer.extend;
 HTMLRenderer.extend(HTMLRenderer, {
 	/**
+	 * Define the identifier for this renderer
+	 * @type {string}
+	 */
+	id: "HTMLRenderer",
+
+
+	/**
 	 * Static reference to Renderer.canPlay
 	 * @see #Renderer.canPlay()
 	 */

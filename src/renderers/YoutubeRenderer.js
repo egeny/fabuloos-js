@@ -49,6 +49,13 @@ YoutubeRenderer.inherit(Renderer);
 YoutubeRenderer.extend = Renderer.extend;
 YoutubeRenderer.extend(YoutubeRenderer, {
 	/**
+	 * Define the identifier for this renderer
+	 * @type {string}
+	 */
+	id: "YoutubeRenderer",
+
+
+	/**
 	 * Check if a given URL is readable by this renderer
 	 * @see #Renderer.canPlay()
 	 */

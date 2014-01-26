@@ -53,12 +53,6 @@ var
 	 */
 	rExt = /\.([\w\d])+(?=\/|\?|#|$)/g,
 
-	/*!
-	 * A RegExp to retrieve a function's name
-	 * @type {RegExp}
-	 */
-	rFunction = /function (\w+)/,
-
 	/**
 	 * A collection of RegExp used to split and trim
 	 * @type {RegExp}
@@ -213,16 +207,16 @@ Renderer.extend(Renderer, {
 	 *   LambdaRenderer.inherit(Renderer); // Inherit from Renderer
 	 */
 	inherit: function inherit(base) {
-		// Set the constructor's name if it doesn't exists (IE)
-		// Beware to only set it if undefined, this property is read-only in strict mode
-		if (!this.name) {
-			var name = rFunction.exec(this.toString()); // Search for the function name
-			this.name = name ? name[1] : "unknown"; // Define the name or define to "unknown"
-		}
-
 		this.prototype = new base(); // Inherit from the base
 		this.prototype.constructor = this; // Correct the constructor
 	}, // end of Renderer.inherit()
+
+
+	/**
+	 * An instance cache, used to retrieve an instance from a plugin
+	 * @type {object}
+	 */
+	instances: {},
 
 
 	/**
@@ -293,23 +287,16 @@ Renderer.extend(Renderer, {
 	 * @return {undefined} Return nothing.
 	 */
 	register: function register(renderer) {
+		// Keep a static reference to the renderer's class
+		// This allow calling LambdaRenderer using Renderer.LambdaRenderer
+		// Only Renderer need to be exposed
+		Renderer[renderer.id] = renderer;
+
 		if (renderer.isSupported) {
 			// Add this renderer to the stack of supported renderers
 			this.supported.push(renderer);
-
-			// Keep a static reference to the renderer's class
-			// This allow calling LambdaRenderer using Renderer.LambdaRenderer
-			// Only Renderer need to be exposed
-			Renderer[renderer.name] = renderer;
 		}
 	}, // end of Renderer.register()
-
-
-	/**
-	 * An instance cache, used to retrieve an instance from a plugin
-	 * @type {object}
-	 */
-	instances: {},
 
 
 	/**
@@ -347,7 +334,7 @@ Renderer.extend({
 	init: function init(config) {
 		var
 			renderer  = this.constructor, // Retrieve the renderer's "class"
-			instances = Renderer.instances[renderer.name]; // Retrieve the instances cache for this kind of renderers
+			instances = Renderer.instances[renderer.id]; // Retrieve the instances cache for this kind of renderers
 
 		// Prepare the instance
 		this.callbacks = []; // The callbacks to launch when the renderer is ready
@@ -362,7 +349,7 @@ Renderer.extend({
 			 * So we expose something like Renderer.instances.LambdaRenderer.myPlayer = this.
 			 * Save also this cache reference to the renderer.
 			 */
-			Renderer.instances[renderer.name] = renderer.instances = instances = {};
+			Renderer.instances[renderer.id] = renderer.instances = instances = {};
 		}
 
 		// Store this instance in the cache (even if it already exists)
@@ -433,7 +420,7 @@ Renderer.extend({
 	 * @return {null} Return `null` to stop chaining.
 	 */
 	destroy: function destroy() {
-		var cache = Renderer.instances[this.constructor.name];
+		var cache = Renderer.instances[this.constructor.id];
 		if (cache[this.config.id]) {
 			delete cache[this.config.id];
 		}

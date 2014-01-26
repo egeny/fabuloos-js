@@ -714,6 +714,9 @@ fab.extend({
 	 * @param {Renderer} renderer The new renderer to use.
 	 * @return {fabuloos} Return the current instance to allow chaining.
 	 *
+	 * @param {string} renderer The renderer's identifier to use.
+	 * @return {fabuloos} Return the current instance to allow chaining.
+	 *
 	 * @param {undefined}
 	 * @return {Renderer|undefined} Return the current renderer.
 	 */
@@ -725,8 +728,13 @@ fab.extend({
 			return this._renderer;
 		}
 
+		// Try to retrieve the renderer if we received a string
+		if (typeof _renderer === "string") {
+			_renderer = Renderer[_renderer];
+		}
+
 		// Check if we correctly received a renderer
-		if (!_renderer.canPlay) {
+		if (!_renderer || !_renderer.canPlay) {
 			throw "This renderer isn't valid.";
 		}
 
@@ -785,6 +793,9 @@ fab.extend({
 	 * @param {Renderer} renderer The only renderer to define as available.
 	 * @return {fabuloos} Return the current instance to allow chaining.
 	 *
+	 * @param {string} renderer The only renderer (by identifier) to define as available.
+	 * @return {fabuloos} Return the current instance to allow chaining.
+	 *
 	 * @param {undefined}
 	 * @return {array|undefined} Return the available renderers.
 	 */
@@ -807,6 +818,12 @@ fab.extend({
 
 		// Loop through each renderers to test them
 		while ((renderer = supported[i])) {
+			// Support renderer's identifiers
+			renderer = typeof renderer === "string" ? Renderer[renderer] : renderer;
+
+			// Handle falsy values
+			renderer = renderer || {};
+
 			// Test the renderer and remove it if unsupported
 			i += "isSupported" in renderer && renderer.isSupported ? 1 : (supported.splice(i, 1)).length - 1;
 		}
@@ -1060,7 +1077,7 @@ fab.extend({
 			// Loop through renderers
 			while ((renderer = renderers.shift())) {
 				// Ask the renderer if it can play this source and store the result
-				_source.solutions[renderer.name] = renderer.canPlay(_source.src, _source.type);
+				_source.solutions[renderer.id] = renderer.canPlay(_source.src, _source.type);
 			}
 
 			// Push this source to the stack
@@ -1128,7 +1145,7 @@ fab.extend({
 		// Loop through each sources to find a playable one
 		while ((source = this._sources[i++])) {
 			// Test if the current renderer (if any) can handle this source
-			if (this._renderer && source.solutions[this._renderer.constructor.name]) {
+			if (this._renderer && source.solutions[this._renderer.constructor.id]) {
 				this._renderer.set("src", source.src); // Simply ask him to change the source
 				return this; // Chaining
 			}
@@ -1139,12 +1156,12 @@ fab.extend({
 				if (this._renderer && this._renderer.constructor === renderer) { continue; }
 
 				// The renderers list may have been changed since the sources solutions have been found
-				if (source.solutions[renderer.name] === undefined) {
-					source.solutions[renderer.name] = renderer.canPlay(source.src, source.type);
+				if (source.solutions[renderer.id] === undefined) {
+					source.solutions[renderer.id] = renderer.canPlay(source.src, source.type);
 				}
 
 				// This renderer seems to be able to play this source
-				if (source.solutions[renderer.name]) {
+				if (source.solutions[renderer.id]) {
 					this._config.src = source.src; // FIXME
 					return this.renderer(renderer); // Change the renderer for this one
 				}
