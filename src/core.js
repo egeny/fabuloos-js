@@ -569,7 +569,7 @@ fab.extend({
 	 * @param {undefined}
 	 * @return {fabuloos} Return the current instance to allow chaining.
 	 */
-	load:  fab.shorthand("load"),
+	load: fab.shorthand("load"),
 
 
 	/**
@@ -705,7 +705,7 @@ fab.extend({
 	 * @param {undefined}
 	 * @return {fabuloos} Return the current instance to allow chaining.
 	 */
-	play:  fab.shorthand("play"),
+	play: fab.shorthand("play"),
 
 
 	/**
@@ -1193,6 +1193,80 @@ fab.extend({
 
 		return this; // Chaining
 	}, // end of trigger()
+
+
+	/**
+	 * Wait before launching the rest of the chain
+	 *
+	 * @param {string} event The event to wait to automatically release the rest of the chain.
+	 * @return {function} Return a function releasing the rest of the chain.
+	 *
+	 * @param {number} time The time to wait (ms) before automatically release the rest of the chain.
+	 * @return {function} Return a function releasing the rest of the chain.
+	 *
+	 * @param {undefined}
+	 * @return {function} Return a function releasing the rest of the chain.
+	 */
+	wait: function wait() {
+		var
+			that  = this, // Keep a reference to the current instance, used in the releaser
+			queue = [],   // Prepare the queue of methods to call later
+			fn; // Loop specific
+
+		// Prepare a function which will release the queue
+		function release() {
+			var
+				result = that,
+				item; // Loop specific
+
+			// Loop through each function to call in the queue
+			while ((item = queue.shift())) {
+				// Call the function, apply the arguments and store the result for the next call
+				result = result[item.fn].apply(result, item.args);
+			}
+
+			// Always return the current instance
+			return that;
+		}
+
+		// Create a dummy function to fake the chaining
+		function dummy(fn) {
+			return function() {
+				// The dummy function just store the arguments received
+				// These arguments will be passed on release time
+				queue.push({ fn: fn, args: arguments });
+
+				// Return the release function to continue the (fake) chaining
+				return this;
+			};
+		}
+
+		// Loop through each method currently available in the prototype
+		for (fn in this.constructor.prototype) {
+			// Process only functions
+			if (typeof this.constructor.prototype[fn] !== "function") { continue; }
+
+			// Add a dummy function having the same method's name
+			// The purpose is to keep the chaining but fake it
+			release[fn] = dummy(fn);
+		}
+
+		// We can release automagically
+		switch (typeof arguments[0]) {
+			case "string":
+				// Automatically release when received this event
+				this.on(arguments[0], release);
+			break;
+
+			case "number":
+				// Automatically release in x milliseconds
+				window.setTimeout(release, arguments[0]);
+			break;
+		}
+
+		// Return the release function having the same properties as the prototype
+		return release;
+	}, // end of wait()
 
 
 	/**
