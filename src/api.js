@@ -1,270 +1,256 @@
+function cycle() {
+	// Don't bother cycling if there is no cues
+	if (!this._cues.length) { return; }
+
+	var
+		cues = this._cues,
+		time = this.get("currentTime"),
+		cue, i = 0, type, at; // Loop specific
+
+	// Loop through each cue to check if we have to launch the handler
+	while ((cue = cues[i++])) {
+		type = "at"    in cue ? "at"      : null;
+		type = "start" in cue ? "between" : type;
+		type = "every" in cue ? "every"   : type;
+
+		switch (type) {
+			case "at":
+				at = fab.toSeconds(cue.at);
+				if (time >= at && time <= (at + .25)) {
+					!cue.active && cue.handler.call(this);
+					cue.active = cue.active ? false : true;
+				}
+			break;
+
+			case "between":
+				if (time >= fab.toSeconds(cue.start) && time <= fab.toSeconds(cue.end)) {
+					cue.handler.call(this);
+				}
+			break;
+
+			case "every":
+				var modulo = time % fab.toSeconds(cue.every);
+				if (time > 1 && modulo < .25) {
+					!cue.active && cue.handler.call(this);
+					cue.active = cue.active ? false : true;
+				}
+			break;
+		}
+	}
+} // end of cycle()
+
 var
 	/**
-	 * A RegExp used to check if a string is a timestamp
+	 * A RegExp used to retrieve the number of milliseconds in a timestamp string
 	 * @type {RegExp}
 	 */
-	rTimestamp = /(\d+(?:[\.|,]\d+)?)(?=[:hms]|$)/,
+	rMilliseconds = /\.(\d+)|(\d+)\s*ms/i,
 
 	/**
 	 * A RegExp used to retrieve the number of seconds in a timestamp string
 	 * @type {RegExp}
 	 */
-	rSeconds = /(\d+(?:[\.|,]\d+)?)s?$/,
+	rSeconds = /^[\w\s]*?(\d+)(?=\.|$)|(\d+)\s*s|(?:\d*:)?\d*:(\d+)/i,
 
 	/**
 	 * A RegExp used to retrieve the number of minutes in a timestamp string
 	 * @type {RegExp}
 	 */
-	rMinutes = /(?:\d+:)?(\d+)(?=:|m)/,
+	rMinutes = /(\d+)\s*m(?!s)|(?:\d*:)?(\d+):\d*/i,
 
 	/**
 	 * A RegExp used to retrieve the number of hours in a timestamp string
 	 * @type {RegExp}
 	 */
-	rHours = /^(\d+)(?:(?::\d+){2}|h)/,
-
-	/**
-	 * The internal track used to store cues
-	 * @type {fab.Track}
-	 */
-	track,
-	cache = {};
+	rHours = /(\d+)\s*h|(\d+):\d*:\d*/i;
 
 
 /**
  * Convert a timestamp string to a number of seconds
- * @static @function
  *
- * @param {string} timestamp The timestamp to convert
- *
- * @returns Return the number of seconds extracted from the timestamp
+ * @param {string} timestamp The timestamp to convert.
+ * @return {number} Return the number of seconds extracted from the timestamp.
  *
  * @example
- *  <code>
- *    fabuloos.toSeconds( "10" ); // Return 10
- *    fabuloos.toSeconds( "1:23" ); // Return 83
- *    fabuloos.toSeconds( "1:23:45" ); // Return 5025
- *    fabuloos.toSeconds( "1s" ); // Return 1
- *    fabuloos.toSeconds( "2m" ); // Return 120
- *    fabuloos.toSeconds( "3h" ); // Return 10800
- *    fabuloos.toSeconds( "1m23" ); // Return 83
- *    fabuloos.toSeconds( "1h23s" ); // Return 3623
- *  </code>
+ *   // Milliseconds
+ *   fab.toSeconds(".123");    // Return 0.123
+ *   fab.toSeconds("0.123");   // Return 0.123
+ *   fab.toSeconds("123ms");   // Return 0.123
+ *   fab.toSeconds("::.123");  // Return 0.123
+ *   fab.toSeconds("::0.123"); // Return 0.123
+ *
+ *   // Seconds
+ *   fab.toSeconds("1");       // Return 1
+ *   fab.toSeconds("1s");      // Return 1
+ *   fab.toSeconds("::1");     // Return 1
+ *
+ *   // Minutes
+ *   fab.toSeconds("1m");   // Return 60
+ *   fab.toSeconds("1:");   // Return 60
+ *   fab.toSeconds("1:23"); // Return 83
+ *
+ *   // Hours
+ *   fab.toSeconds("1h");      // Return 3600
+ *   fab.toSeconds("1::");     // Return 3600
+ *   fab.toSeconds("1:23:45"); // Return 3783
+ *
+ *   // Combined
+ *   fab.toSeconds("1h 23m 45s 567ms"); // Return 3783.567
+ *   fab.toSeconds("1:23:45.567");      // Return 3783.567
+ *
+ *   // Negative
+ *   fab.toSeconds("-1s");  // Return -1
+ *   fab.toSeconds("-::1"); // Return -1
+ *
+ *   // Relative
+ *   fab.toSeconds("50%");  // Will return duration * .5
+ *   fab.toSeconds("half"); // Will return duration * .5
  */
-fab.toSeconds = function( timestamp ) {
+fab.toSeconds = function(timestamp) {
 	timestamp += ""; // Force string conversion
 
 	var
-		s = timestamp.match( rSeconds ),
-		m = timestamp.match( rMinutes ),
-		h = timestamp.match( rHours );
+		h  = timestamp.match(rHours),
+		m  = timestamp.match(rMinutes),
+		s  = timestamp.match(rSeconds),
+		ms = timestamp.match(rMilliseconds),
 
-	s = s ? parseFloat( s[1].replace( ",", "." ) ) : 0;
-	m = m ? parseInt( m[1], 10 ) : 0;
-	h = h ? parseInt( h[1], 10 ) : 0;
+	h  = h  ? parseInt(h[1]  || h[2], 10)         : 0;
+	m  = m  ? parseInt(m[1]  || m[2], 10)         : 0;
+	s  = s  ? parseInt(s[1]  || s[2] || s[3], 10) : 0;
+	ms = ms ? parseInt(ms[1] || ms[2], 10)        : 0;
+	ms = parseInt((ms * 100 + "").substr(0, 3), 10); // Zerofill
 
-	return (h * 3600) + (m * 60) + s;
-}; // end of toSeconds()
+	return (h * 3600) + (m * 60) + s + (ms / 1000);
+}; // end of fab.toSeconds()
 
 
-// Extend the framework with new methods
 fab.extend({
+	init: function init(config) {
+		this._cues = [];
+
+		this.on("timeupdate", cycle);
+		return this._super(config);
+	},
+
+
 	/**
-	 * Register an handler to be triggered at a given timestamp
-	 * @function
+	 * Register an handler for a given timestamp
 	 *
-	 * @param {number|string} timestamp The timestamp when to trigger the handler
-	 * @param {function} handler The function to call when the timestamp will be reached
-	 * @param {boolean} once TODO
+	 * @param {number} timestamp The timestamp when to launch the handler.
+	 * @param {function} handler The function to call when the timestamp is reached.
+	 * @return {fabuloos} Return the current instance to allow chaining.
 	 *
-	 * @returns {fabuloos} Return the current instance of the player to allow chaining
+	 * @param {string} timestamp The timestamp when to launch the handler.
+	 * @param {function} handler The function to call when the timestamp is reached.
+	 * @return {fabuloos} Return the current instance to allow chaining.
+	 *
+	 * @param {object} obj An hash of timestamps and handlers.
+	 * @return {fabuloos} Return the current instance to allow chaining.
 	 *
 	 * @example
-	 *  <code>
-	 *    fabuloos(…)
-	 *      .at( 1367, handle ), // Launch the "handle" function at 1367 sec
-	 *      .at( "3:10", handle ), // Launch the "handle" function at 3 minutes and 10 seconds
-	 *      .at( "1h03m10s", handle ), // Launch the "handle" function at 1 hour, 3 minutes and 10 seconds
-	 *      .at( "50%", handle ), // Launch the "handle" function when the timestamp will reach 50% of the duration
-	 *      .at( "half", handle ); // Launch the "handle" function when the timestamp will reach the "half" of the duration (@see fabuloos.TODO)
-	 *  </code>
+	 *   fab(…)
+	 *    .at(10, function() { console.log("10 seconds"); })
+	 *    .at("1m23", function() { console.log("cue reached"); })
+	 *    .at({
+	 *      "1s": handle,
+	 *      "2m": handle,
+	 *      "3h": handle,
+	 *      "50%": handle
+	 *    });
 	 */
-	at: function( timestamp, handler, once ) {
-		//console.log("registering handler for", timestamp);
-
-		var isAbsolute = rTimestamp.test( timestamp );
-
-		if (!track) {
-			track = this.addTrack( "metadata" );
-
-			this.on("entercue", function( event ) {
-				var
-					handlers = cache[event.cue.startTime],
-					i = 0;
-
-				while((handler = handlers[i++]) && handler.times) {
-					handler.handler.call( this );
-					handler.times--;
-				}
-			});
-		}
-
-		if (isAbsolute) {
-			var time = fab.toSeconds( timestamp );
-
-			if (!cache[time]) {
-				cache[time] = [];
+	at: function at(timestamp, handler) {
+		if (arguments.length === 1 && arguments[0] && arguments[0].constructor === Object) {
+			for (var t in arguments[0]) {
+				this.at(t, arguments[0][t]);
 			}
 
-			cache[time].push({
-				handler: handler,
-				times: once || Infinity
-			});
-
-			track.addCue( new fab.TrackCue( fab.toSeconds( timestamp ), fab.toSeconds( timestamp ) + 0.25 ) );
-		} else {
-			// 25%
-			// half
-			//var time = /(\d+)%/.exec( timestamp );
-			//console.log(time);
-return;
-			//var time = (this.duration() / 100) * parseFloat( time[1] );
-			//console.log(time);
+			return this; // Chaining
 		}
+
+		// Add a new internal cue
+		this._cues.push({
+			at:      timestamp,
+			handler: handler
+		});
+
+		return this; // Chaining
 	}, // end of at()
 
 
 	/**
-	 * TODO
+	 * Register an handler for a given interval
+	 *
+	 * @param {number} start The start point of the interval.
+	 * @param {number} end The end point of the interval.
+	 * @param {function} handler The function to call when a timeupdate event is triggered in the interval.
+	 * @return {fabuloos} Return the current instance to allow chaining.
+	 *
+	 * @param {string} start The start point of the interval.
+	 * @param {number} end The end point of the interval.
+	 * @param {function} handler The function to call when a timeupdate event is triggered in the interval.
+	 * @return {fabuloos} Return the current instance to allow chaining.
+	 *
+	 * @param {number} start The start point of the interval.
+	 * @param {string} end The end point of the interval.
+	 * @param {function} handler The function to call when a timeupdate event is triggered in the interval.
+	 * @return {fabuloos} Return the current instance to allow chaining.
+	 *
+	 * @param {string} start The start point of the interval.
+	 * @param {string} end The end point of the interval.
+	 * @param {function} handler The function to call when a timeupdate event is triggered in the interval.
+	 * @return {fabuloos} Return the current instance to allow chaining.
+	 *
+	 * @example
+	 *   fab(…)
+	 *    .between(10, 20, function() { console.log("current time between 10 and 20 seconds"); })
+	 *    .between("1m", "2m" function() { console.log("current time between 1 and 2 minutes"); });
 	 */
-	between: function( start, end, handler, once, every ) {
+	between: function between(start, end, handler) {
+		this._cues.push({
+			start:   start,
+			end:     end,
+			handler: handler
+		});
 
+		return this; // Chaining
 	}, // end of between()
 
 
 	/**
-	 * TODO
-	 */
-	every: function( timestamp, handler, relative ) {
-
-	} // end of every()
-
-
-	/**
-	 * TODO
-	 */
-	time: function(value) {
-		return this[(value === undefined) ? "get" : "set"]("currentTime", value);
-	}, // end of time()
-
-
-
-
-	/**
-	 * Get the player's ratio
-	 * @function
+	 * Register a recurrent handler
 	 *
-	 * @returns {float} Return the player's ratio or 0 if the player has no width or height
-	 */
-	ratio: function() {
-		var
-			width  = this.width(),
-			height = this.height();
-
-		return (width && height) ? width / height : 0;
-	}, // end of ratio()
-
-
-	/**
-	 * Toggle the playback of the media
-	 * @function
+	 * @param {number} timestamp The timestamp when to launch the handler.
+	 * @param {function} handler The function to call when the timestamp is reached.
+	 * @return {fabuloos} Return the current instance to allow chaining.
 	 *
-	 * @returns {fabuloos} Return the current instance of the player to allow chaining
-	 */
-	togglePlay: function() {
-		return this[this.paused() ? "play" : "pause"](); // Chaining
-	}, // end of togglePlay()
-
-
-
-	/**
-	 * Get the video's ratio
-	 * @function
+	 * @param {string} timestamp The timestamp when to launch the handler.
+	 * @param {function} handler The function to call when the timestamp is reached.
+	 * @return {fabuloos} Return the current instance to allow chaining.
 	 *
-	 * @returns {float} Return the video's ratio or 0 if the metadata wasn't received yet or if there is no video
-	 */
-	videoRatio: function() {
-		var
-			width  = this.videoWidth(),
-			height = this.videoHeight();
-
-		return (width && height) ? width / height : 0;
-	}, // end of ratio()
-
-
-	/**
-	 * Get the full viewport's infos
-	 * @function
+	 * @param {object} obj An hash of timestamps and handlers.
+	 * @return {fabuloos} Return the current instance to allow chaining.
 	 *
-	 * @returns {object} Return the full viewport infos (size and position) or undefined if none
+	 * @example
+	 *   fab(…)
+	 *    .every(10, function() { console.log("Launched every 10 seconds"); })
+	 *    .every("1m", function() { console.log("Launched every minutes"); });
 	 */
-	viewport: function() {
-		var
-			// Get player's size
-			width       = this.width(),
-			height      = this.height(),
-			ratio       = this.ratio(),
+	every: function every(timestamp, handler) {
+		this._cues.push({
+			every:   timestamp,
+			handler: handler
+		});
 
-			// Get video's size
-			videoWidth  = this.videoWidth(),
-			videoHeight = this.videoHeight(),
-			videoRatio  = this.videoRatio(),
-
-			horizontal, vertical, // Horizontal and vertical spacing
-			viewport    = {}; // The object to return
-
-		// There is no viewport
-		if (!ratio || !videoRatio) {
-			return;
-		}
-
-		// Calculate the viewport size
-		if (ratio < videoRatio) {
-			viewport.width  = width;
-			viewport.height = Math.floor( videoHeight * (width / videoWidth) );
-		} else {
-			viewport.width  = Math.floor( videoWidth * (height / videoHeight) );
-			viewport.height = height;
-		}
-
-		// Calculate horizontal and vertical spacing
-		horizontal = (width  - viewport.width)  / 2;
-		vertical   = (height - viewport.height) / 2;
-
-		// Define top, right, bottom and left
-		viewport.top    = Math.floor( vertical );
-		viewport.right  = Math.ceil( horizontal );
-		viewport.bottom = Math.ceil( vertical );
-		viewport.left   = Math.floor( horizontal );
-
-		return viewport;
-	}, // end of viewport()
+		return this; // Chaining
+	}, // end of every()
 
 
 	/**
 	 * TODO
 	 */
-	volume: function( value ) {
-		if (value === undefined) {
-			return this.get( "volume" );
-		}
+	forget: function forget(what) {
 
-		var volume = typeof value === "string" ? this.get( "volume" ) + parseFloat( value ) : value;
+	} // end of forget()
 
-		volume = volume < 0 ? 0 : volume;
-		volume = volume > 1 ? 1 : volume;
-		this.set( "volume", value );
-
-	} // end of volume()
-
-}); // end of fab.extend()
+});
