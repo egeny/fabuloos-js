@@ -432,7 +432,7 @@ fab.extend({
 	 * Detach all listeners from the renderer
 	 *
 	 * @param {undefined}
-	 * @returns {fabuloos} Return the current instance to allow chaining.
+	 * @return {fabuloos} Return the current instance to allow chaining.
 	 */
 	detach: function detach() {
 		var
@@ -787,7 +787,7 @@ fab.extend({
 	/**
 	 * Define the list of supported renderers
 	 *
-	 * @params {array} renderers The renderers to define as available.
+	 * @param {array} renderers The renderers to define as available.
 	 * @return {fabuloos} Return the current instance to allow chaining.
 	 *
 	 * @param {Renderer} renderer The only renderer to define as available.
@@ -867,13 +867,11 @@ fab.extend({
 	 * @return {fabuloos} Return the current instance to allow chaining.
 	 *
 	 * @example
-	 * <code>
 	 *   fab().set("autoplay", true); // Setting the "autoplay" property to "true"
 	 *   fab().set({
 	 *     width: 720,
 	 *     autoplay: true
 	 *   });
-	 * </code>
 	 */
 	set: function set(property, value) {
 		// Support receiving object literals
@@ -1182,10 +1180,8 @@ fab.extend({
 	 * @return {fabuloos} Return the current instance to allow chaining.
 	 *
 	 * @example
-	 *  <code>
-	 *    var player = fab("media");
-	 *    player.toggle("autoplay");
-	 *  </code>
+	 *   var player = fab("media");
+	 *   player.toggle("autoplay");
 	 */
 	toggle: function toggle(property) {
 		if (new RegExp(property).test(togglerProperties) && this._renderer) {
@@ -1287,7 +1283,7 @@ fab.extend({
 
 
 	/**
-	 * Get or set the width or the player
+	 * Get or set the width of the player
 	 *
 	 * @param {number} value The new width to apply.
 	 * @return {fabuloos} Return the current instance to allow chaining.
