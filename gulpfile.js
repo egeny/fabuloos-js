@@ -28,7 +28,7 @@ var
 		"src/renderers/Renderer.js",
 		"src/renderers/FlashRenderer.js",
 		"src/renderers/HTMLRenderer.js",
-		"src/renderers/FabuloosFlashRenderer.js",
+		"src/renderers/FabFlashRenderer.js",
 		"src/renderers/YoutubeRenderer.js",
 		//"src/renderers/DailymotionRenderer.js",
 
