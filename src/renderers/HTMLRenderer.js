@@ -57,9 +57,21 @@ HTMLRenderer.extend(HTMLRenderer, {
 	 * A RegExp used to test if an element is <audio> or <video>
 	 * @type {RegExp}
 	 */
-	rMedia: /audio|video/i
+	rMedia: /audio|video/i,
+
+
+	support: {
+		autoplay: false
+	}
 }); // end of HTMLRenderer.extend(HTMLRenderer)
 
+window.setTimeout(function() {
+	var a = new Audio("data:audio/mpeg;base64,/+MYxAAAAANIAUAAAASEEB/jwOFM/0MM/90b/+RhST//w4NFwOjf///PZu////9lns5GFDv//l9GlUIEEIAAAgIg8Ir/JGq3/+MYxDsLIj5QMYcoAP0dv9HIjUcH//yYSg+CIbkGP//8w0bLVjUP///3Z0x5QCAv/yLjwtGKTEFNRTMuOTeqqqqqqqqqqqqq/+MYxEkNmdJkUYc4AKqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq");
+	a.autoplay = true;
+	a.addEventListener("play", function() {
+		HTMLRenderer.support.autoplay = true;
+	});
+}, 0);
 
 // Extend the HTMLRenderer's prototype
 HTMLRenderer.extend({

@@ -9,7 +9,7 @@
 	<!-- Fabuloos (core) -->
 	<script src="src/core.js"></script>
 	<script src="src/event.js"></script>
-	<!--<script src="src/api.js"></script>-->
+	<script src="src/api.js"></script>
 
 	<!-- Fabuloos (renderers) -->
 	<script src="src/renderers/Renderer.js"></script>
@@ -25,14 +25,76 @@
 </head>
 
 <body>
-	<video id="media" width="720" height="405" controls>
+	<video id="media" width="720" height="405" controls muted>
 		<source type="video/mp4" src="http://res/demoreel-2013.mp4" />
 		<source type="video/youtube" src="http://www.youtube.com/watch?v=UK-lGSYKaaM" />
 	</video>
+	<button id="play">play</button>
+	<button id="pause">pause</button>
+
 
 	<script>
-		FabuloosFlashRenderer.swf = "build/FabuloosFlashRenderer.swf";
-		var player = fab("media");
+		Renderer.FabFlashRenderer.swf = "build/FabFlashRenderer.swf";
+		var player = fab({
+			on: {
+				"*": function(e) { console.log(e.type, "dispatched"); }
+			},
+			element: "media"
+		});
+
+		//player.at(2, function() { console.log("2s"); });
+		//player.between(3, 5, function() { console.log("between"); });
+		//player.every(7, function() { console.log("7sec"); });
+
+		player.at({
+			1: function() { console.log("1sec"); },
+			2: function() { console.log("2sec"); }
+		});
+
+		var tests = {
+			".123":    .123,
+			"0.123":   .123,
+			"123ms":   .123,
+			":.123":   .123,
+			"::.123":  .123,
+			":0.123":  .123,
+			"::0.123": .123,
+
+			"1":   1,
+			"1s":  1,
+			":1":  1,
+			"::1": 1,
+
+			"1m":  60,
+			"1:":  60,
+			":1:": 60,
+			"1:23":  83,
+			":1:23": 83,
+
+			"1h":  3600,
+			"1::": 3600,
+			"1:23:45": 5025,
+
+			"1h 23m 45s 567ms": 5025.567,
+			"1:23:45.567":      5025.567,
+
+			"10": 10,
+			"1h 23.5": 3623.5
+		}
+
+		for (var test in tests) {
+			var
+				result   = fab.toSeconds(test),
+				expected = tests[test];
+
+			if (result !== expected) {
+				console.log('fab.toSeconds("' + test + '") got', fab.toSeconds(test), "but was expecting", expected);
+			}
+		}
+
+
+		document.getElementById("play").addEventListener("click", player.closure("play"), false);
+		document.getElementById("pause").addEventListener("click", player.closure("pause"), false);
 
 		// Dump all properties
 		function dump() {

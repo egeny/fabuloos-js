@@ -15,21 +15,21 @@ This README file will guide you through…
 There is only 4 little steps to your success:
 
 1. [Download](http://fabuloos.org/download/) the last stable version of fabuloos and add it to your project:
-```
+	```
 <script src="/js/fabuloos.min.js"></script>
-```
+	```
 
 2. Add an HTML5 `<video>` or `<audio>` element:
-```
+	```
 <video id="player" src="/videos/awesome.mp4"></video>
-```
+	```
 
 3. Make your player fabuloos:
-```
+	```
 <script>
   var player = fab("player");
 </script>
-```
+	```
 
 4. Enjoy the [API](http://fabuloos.org/documentation/api/)!
 
@@ -64,7 +64,7 @@ You should see a `build` folder with an uncompressed version and a minified one.
 
 You can select which files to include during the build by editing the `gulpfile.js`.
 
-The `FabuloosFlashRenderer` need its SWF file in order to have a Flash fallback. Have a look to the [dedicated repository](https://github.com/egeny/fabuloos-flash) to build it. A pre-compiled version is coming for your convenience.
+The `FabFlashRenderer` need its SWF file in order to have a Flash fallback. Have a look to the [dedicated repository](https://github.com/egeny/fabuloos-flash) to build it. A pre-compiled version is coming for your convenience.
 
 ## How to test
 
